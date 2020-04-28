@@ -1,0 +1,4 @@
+# Auto Configure
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+org.telegram.expensesbot.bots.TelegramBotOptionsAutoConfiguration,\
+org.telegram.expensesbot.bots.TelegramBotAutoConfiguration
