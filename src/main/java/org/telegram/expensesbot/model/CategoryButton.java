@@ -3,15 +3,15 @@ package org.telegram.expensesbot.model;
 import javax.persistence.*;
 
 @Entity
-@Table(name = "main_keyboard")
-public class MainKeyboard {
+@Table
+public class CategoryButton {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE)
     private long id;
 
     @Column
-    private long userId;
+    private long chatId;
 
     @Column
     private String category;
@@ -27,12 +27,12 @@ public class MainKeyboard {
         this.id = id;
     }
 
-    public long getUserId() {
-        return userId;
+    public long getchatId() {
+        return chatId;
     }
 
-    public void setUserId(long userId) {
-        this.userId = userId;
+    public void setchatId(long chatId) {
+        this.chatId = chatId;
     }
 
     public String getCategory() {
@@ -51,12 +51,12 @@ public class MainKeyboard {
         this.expenses = expenses;
     }
 
-    public MainKeyboard() {
+    public CategoryButton() {
     }
 
-    /*public MainKeyboard(long userId, String category, int expenses) {
-        this.userId = userId;
+    public CategoryButton(long userId, String category, int expenses) {
+        this.chatId = userId;
         this.category = category;
         this.expenses = expenses;
-    }*/
+    }
 }

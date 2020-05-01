@@ -1,8 +1,10 @@
 package org.telegram.expensesbot;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import org.telegram.expensesbot.controller.MainKeyboardController;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -17,6 +19,9 @@ public class Bot extends TelegramLongPollingBot {
     private static final String START = "/start";
     private final ExpensesReportKeyboard expensesReportKeyboard = new ExpensesReportKeyboard();
     private final CategoriesControlKeyboard categoriesControlKeyboard = new CategoriesControlKeyboard();
+
+
+    @Autowired
     private MainKeyboardController mainKeyboard;
     private String previousMessage = "";
     private Message message;
@@ -32,9 +37,10 @@ public class Bot extends TelegramLongPollingBot {
         if (update.hasMessage()) {
             if (message != null && message.hasText()) {
                 messageText = message.getText();
+                mainKeyboard.setChatId(message.getChatId());
 
-                initStart(message.getChatId());
-                //deleteButton();
+                initStart();
+                deleteButton();
                 handleCategoriesControlButton();
                 addButtonIfNewCategoryPrevious();
                 //handleSummaryButton();
@@ -48,11 +54,8 @@ public class Bot extends TelegramLongPollingBot {
         }
     }
 
-    private void initStart(long id) {
+    private void initStart() {
         if (messageText.equals(START)) {
-            mainKeyboard = new MainKeyboardController(id);
-            //User user = new User(id, new MainKeyboard());
-            //userRepository.save(user);
             sendReplyKeyboardMessage("Начинаем работать", mainKeyboard.getKeyboard());
         }
     }
@@ -77,9 +80,7 @@ public class Bot extends TelegramLongPollingBot {
     private void deleteButton() {
         if (previousMessage.equals("Удалить категорию")) {
             if (mainKeyboard.isCategoryButton(messageText)) {
-                //category = ExpensesParser.parseCategoryName(messageText);
-                //mainKeyboard.deleteButton(messageText);
-                sendReplyKeyboardMessage("Добавление успешно", mainKeyboard.getKeyboard());
+                sendReplyKeyboardMessage("Удаление успешно", mainKeyboard.deleteCategory(messageText));
             }
         }
     }
@@ -124,7 +125,7 @@ public class Bot extends TelegramLongPollingBot {
             sendTextMessageIfCallback("Выберите категорию для удаления", update);
             previousMessage = "Удалить категорию";
         } else if (buttonData.equals("reset")) {
-            mainKeyboard.resetExpenses();
+            //mainKeyboard.resetExpenses();
             sendKeyboardMessageIfCallback("Счета обнулены\nПоздравляем с новым периодом в жизни!",
                 update, mainKeyboard.getKeyboard());
         }

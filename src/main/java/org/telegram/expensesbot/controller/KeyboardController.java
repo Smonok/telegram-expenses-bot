@@ -1,18 +1,22 @@
-package org.telegram.expensesbot;
+package org.telegram.expensesbot.controller;
 
 
 import java.util.List;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
 public class KeyboardController {
-    private final int rowButtonsNumber;
-    private final int headerRowsNumber;
+    private int rowButtonsNumber = 2;
+    private int headerRowsNumber = 2;
     private final List<KeyboardRow> keyboard;
 
     public KeyboardController(List<KeyboardRow> keyboard, int rowButtonsNumber, int headerRowsNumber) {
         this.keyboard = keyboard;
         this.rowButtonsNumber = rowButtonsNumber;
         this.headerRowsNumber = headerRowsNumber;
+    }
+
+    public KeyboardController(List<KeyboardRow> keyboard) {
+        this.keyboard = keyboard;
     }
 
     public void addButton(String name) {
