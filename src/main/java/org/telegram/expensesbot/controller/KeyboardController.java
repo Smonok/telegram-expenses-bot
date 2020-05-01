@@ -2,16 +2,16 @@ package org.telegram.expensesbot.controller;
 
 
 import java.util.List;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
 public class KeyboardController {
-    private int rowButtonsNumber = 2;
-    private int headerRowsNumber = 2;
     private final List<KeyboardRow> keyboard;
+    private static final int rowButtonsNumber = 2;
+    private int headerRowsNumber = 2;
 
-    public KeyboardController(List<KeyboardRow> keyboard, int rowButtonsNumber, int headerRowsNumber) {
+    public KeyboardController(List<KeyboardRow> keyboard, int headerRowsNumber) {
         this.keyboard = keyboard;
-        this.rowButtonsNumber = rowButtonsNumber;
         this.headerRowsNumber = headerRowsNumber;
     }
 
@@ -44,8 +44,9 @@ public class KeyboardController {
     public void deleteButton(String name) {
         int nextRowIndex = computeNextRowIndex(name);
         int nextColumnIndex = computeNextColumnIndex(name);
+        int movementsNumber = computeMovementsNumber(name);
 
-        pushButtonsText(nextRowIndex, nextColumnIndex);
+        pushButtonsText(nextRowIndex, nextColumnIndex, movementsNumber);
         removeLastButton();
     }
 
@@ -68,16 +69,36 @@ public class KeyboardController {
         return -1;
     }
 
-    private void pushButtonsText(int nextRowIndex, int nextColumnIndex) {
-        for (int i = nextRowIndex; i < keyboard.size(); i++) {
-            changeRowButtonsText(i, nextColumnIndex);
+    private void pushButtonsText(int nextRowIndex, int nextColumnIndex, int movementsNumber) {
+        int row = nextRowIndex;
+        int column = nextColumnIndex;
+
+        for (int j = 0; j < movementsNumber; j++) {
+            changePreviousButtonText(row, column);
+            if (column == 1) {
+                row++;
+            }
+            column ^= 1; // 0 -> 1 , 1 -> 0
         }
     }
 
-    private void changeRowButtonsText(int row, int columnIndex) {
-        for (int j = columnIndex; j < keyboard.get(row).size(); j++) {
-            changePreviousButtonText(row, j);
+    private int computeMovementsNumber(String name) {
+        int count = 0;
+        boolean isFound = false;
+
+        for (KeyboardRow row : keyboard) {
+            for(KeyboardButton button: row){
+                if(button.getText().equals(name)) {
+                    isFound = true;
+                    continue;
+                }
+                if(isFound){
+                    count++;
+                }
+            }
         }
+
+        return count;
     }
 
     private void changePreviousButtonText(int row, int column) {

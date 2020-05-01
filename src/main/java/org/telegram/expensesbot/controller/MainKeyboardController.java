@@ -34,37 +34,52 @@ public class MainKeyboardController {
         this.chatId = chatId;
     }
 
-    public MainKeyboardController(){
+    public MainKeyboardController() {
         initHeader(fieldKeyboard);
     }
 
     public List<KeyboardRow> addCategory(String name) {
         final int beginExpenses = 0;
         buttonService.add(new CategoryButton(chatId, name, beginExpenses));
+        log.info("add category method: ->{}<- for chat: {}", name, chatId);
 
         if (cache.containsKey(chatId)) {
-            KeyboardController keyboardController = new KeyboardController(cache.get(chatId));
-            keyboardController.addButton(name);
-            log.debug("add to cache for chat: {}", chatId);
-            return cache.get(chatId);
+            log.info("add ->{}<- to cache for chat: {}", name, chatId);
+            return addButtonToCacheKeyboard(name, beginExpenses);
         }
+
+        log.info("fillEmptyKeyboard() in addCategory: ->{}<- for chat: {}", name, chatId);
 
         return fillEmptyKeyboard();
     }
 
-    public List<KeyboardRow> deleteCategory(String buttonName){
-        String category = ExpensesParser.parseCategoryName(buttonName);
+    private List<KeyboardRow> addButtonToCacheKeyboard(String name, final int beginExpenses) {
+        KeyboardController keyboardController = new KeyboardController(cache.get(chatId));
+        String buttonName = combineButtonName(name, beginExpenses);
+        keyboardController.addButton(buttonName);
 
+        return cache.get(chatId);
+    }
+
+    public List<KeyboardRow> deleteCategory(String buttonName) {
+        String category = ExpensesParser.parseCategoryName(buttonName);
+        log.info("deleteCategory method: ->{}<- for chat: {}", buttonName, chatId);
         buttonService.deleteByCategoryAndChatId(category, chatId);
 
         if (cache.containsKey(chatId)) {
-            KeyboardController keyboardController = new KeyboardController(cache.get(chatId));
-            keyboardController.deleteButton(buttonName);
-            log.debug("delete from cache for chat: {}", chatId);
-            return cache.get(chatId);
+            log.info("delete ->{}<- from cache for chat: {}", buttonName, chatId);
+            return deleteButtonFromCacheKeyboard(buttonName);
         }
 
+        log.info("fillEmptyKeyboard() in deleteCategory: ->{}<- for chat: {}", buttonName, chatId);
         return fillEmptyKeyboard();
+    }
+
+    private List<KeyboardRow> deleteButtonFromCacheKeyboard(String buttonName) {
+        KeyboardController keyboardController = new KeyboardController(cache.get(chatId));
+        keyboardController.deleteButton(buttonName);
+
+        return cache.get(chatId);
     }
 
     private List<KeyboardRow> fillEmptyKeyboard() {
@@ -166,10 +181,13 @@ public class MainKeyboardController {
         return false;
     }
 
+    public boolean isCategoryExists(String category) {
+        return buttonService.existsCategoryButtonByCategoryAndChatId(category, chatId);
+    }
+
     public String combineButtonName(String name, int expenses) {
         return String.format("'%s - %d'", name, expenses);
     }
-
 
 
     public List<KeyboardRow> getKeyboard() {

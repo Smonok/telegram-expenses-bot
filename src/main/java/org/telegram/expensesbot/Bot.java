@@ -67,10 +67,15 @@ public class Bot extends TelegramLongPollingBot {
         }
     }
 
+
     private void addButtonIfNewCategoryPrevious() {
         if (previousMessage.equals("Новая категория")) {
             if (messageText.charAt(0) != '\'') {
-                sendReplyKeyboardMessage("Добавление успешно", mainKeyboard.addCategory(messageText));
+                if(mainKeyboard.isCategoryExists(messageText)){
+                    sendTextMessage("Извините, категория с таким\nназванием уже существует");
+                }else {
+                    sendReplyKeyboardMessage("Добавление успешно", mainKeyboard.addCategory(messageText));
+                }
             } else {
                 sendReplyKeyboardMessage("Недопустимый символ -> '", mainKeyboard.getKeyboard());
             }
