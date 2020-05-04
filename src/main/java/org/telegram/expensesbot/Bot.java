@@ -130,9 +130,8 @@ public class Bot extends TelegramLongPollingBot {
             sendTextMessageIfCallback("Выберите категорию для удаления", update);
             previousMessage = "Удалить категорию";
         } else if (buttonData.equals("reset")) {
-            //mainKeyboard.resetExpenses();
             sendKeyboardMessageIfCallback("Счета обнулены\nПоздравляем с новым периодом в жизни!",
-                update, mainKeyboard.getKeyboard());
+                update, mainKeyboard.resetExpenses());
         }
 
         //Only for categoriesControlKeyboard

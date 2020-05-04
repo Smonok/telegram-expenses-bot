@@ -17,9 +17,10 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 
 @Component
 public class MainKeyboardController {
-    private static final List<KeyboardRow> fieldKeyboard = new ArrayList<>();
+    private static final List<KeyboardRow> onlyHeaderdKeyboard = new ArrayList<>();
     private static final String CATEGORIES_CONTROL = "'Управление категориями'";
     private static final String SUMMARY = "Суммарно";
+    private static int headerRowsNumber = 2;
     private static final Logger log = LoggerFactory.getLogger(MainKeyboardController.class);
     private final ExpensesCalculator expensesCalculator = new ExpensesCalculator();
 
@@ -35,11 +36,11 @@ public class MainKeyboardController {
     }
 
     public MainKeyboardController() {
-        initHeader(fieldKeyboard);
+        initHeader(onlyHeaderdKeyboard);
     }
 
     public List<KeyboardRow> addCategory(String name) {
-        final int beginExpenses = 0;
+        final int beginExpenses = 200;
         buttonService.add(new CategoryButton(chatId, name, beginExpenses));
         log.info("add category method: ->{}<- for chat: {}", name, chatId);
 
@@ -125,6 +126,38 @@ public class MainKeyboardController {
         });
     }
 
+    public List<KeyboardRow> resetExpenses() {
+        final int resultExpenses = 0;
+
+        resetDBExpenses(resultExpenses);
+
+        if (cache.containsKey(chatId)) {
+            log.info("reset cache expenses for chat: {}", chatId);
+
+            resetCacheExpenses(resultExpenses);
+            return cache.get(chatId);
+        }
+
+        return fillEmptyKeyboard();
+    }
+
+    private void resetDBExpenses(final int resultExpenses) {
+        log.info("reset DB expenses for chat: {}", chatId);
+        buttonService.updateExpenses(resultExpenses, chatId);
+    }
+
+    private void resetCacheExpenses(final int resultExpenses){
+        List<KeyboardRow> cacheKeyboard = cache.get(chatId);
+
+        for(int i = headerRowsNumber; i < cacheKeyboard.size(); i++) {
+            cacheKeyboard.get(i).forEach(button -> {
+                String category = ExpensesParser.parseCategoryName(button.getText());
+                String buttonName = combineButtonName(category, resultExpenses);
+
+                button.setText(buttonName);
+            });
+        }
+    }
 
     /*==========================================================================================*/
 
@@ -151,19 +184,6 @@ public class MainKeyboardController {
 
     }
 
-    /* public void resetExpenses() {
-         int resultExpenses = 0;
-         for (int i = 1; i < keyboard.size(); i++) {
-             for (int j = 0; j < keyboard.get(i).size(); j++) {
-                 String category = ExpensesParser.parseCategoryName(keyboard.get(i).get(j).getText());
-                 String headline = combineButtonName(category, resultExpenses);
-
-                 expensesCalculator.changeExpenses(category, resultExpenses);
-                 keyboard.get(i).get(j).setText(headline);
-             }
-         }
-     }
- */
     public boolean isSummaryButton(String message) {
         if (message.charAt(0) == '\'') {
             String buttonName = ExpensesParser.parseCategoryName(message);
@@ -189,8 +209,7 @@ public class MainKeyboardController {
         return String.format("'%s - %d'", name, expenses);
     }
 
-
     public List<KeyboardRow> getKeyboard() {
-        return fieldKeyboard;
+        return onlyHeaderdKeyboard;
     }
 }

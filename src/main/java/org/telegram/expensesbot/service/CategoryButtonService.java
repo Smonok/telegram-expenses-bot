@@ -25,12 +25,17 @@ public class CategoryButtonService implements DefaultCategoryButtonService {
     }
 
     @Override
-    public long deleteByCategoryAndChatId(String category, long chatId){
+    public long deleteByCategoryAndChatId(String category, long chatId) {
         return categoryButtonRepository.deleteByCategoryAndChatId(category, chatId);
     }
 
     @Override
-    public boolean existsCategoryButtonByCategoryAndChatId(String category, long chatId){
+    public boolean existsCategoryButtonByCategoryAndChatId(String category, long chatId) {
         return categoryButtonRepository.existsCategoryButtonByCategoryAndChatId(category, chatId);
+    }
+
+    @Override
+    public int updateExpenses(int expenses, long chatId) {
+        return categoryButtonRepository.updateCategoryButtonExpenses(expenses, chatId);
     }
 }
