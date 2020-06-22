@@ -35,6 +35,11 @@ public class CategoryButtonService implements DefaultCategoryButtonService {
     }
 
     @Override
+    public long deleteAllByChatId(long chatId) {
+        return categoryButtonRepository.deleteAllByChatId(chatId);
+    }
+
+    @Override
     public int updateExpenses(int expenses, long chatId) {
         return categoryButtonRepository.updateCategoryButtonExpenses(expenses, chatId);
     }

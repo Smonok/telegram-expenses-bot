@@ -13,5 +13,7 @@ public interface DefaultCategoryButtonService {
 
     boolean existsCategoryButtonByCategoryAndChatId(String category, long chatId);
 
+    long deleteAllByChatId(long chatId);
+
     int updateExpenses(int expenses, long chatId);
 }

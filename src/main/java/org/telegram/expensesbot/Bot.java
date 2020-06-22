@@ -56,7 +56,7 @@ public class Bot extends TelegramLongPollingBot {
 
     private void initStart() {
         if (messageText.equals(START)) {
-            sendReplyKeyboardMessage("Начинаем работать", mainKeyboard.getKeyboard());
+            sendReplyKeyboardMessage("Начинаем работать", mainKeyboard.removeUserExpenses());
         }
     }
 
@@ -134,9 +134,6 @@ public class Bot extends TelegramLongPollingBot {
                 update, mainKeyboard.resetExpenses());
         }
 
-        //Only for categoriesControlKeyboard
-        //TODO: Make for all keyboards
-        //previousMessage = categoriesControlKeyboard.getButtonTextByData(buttonData);
         System.out.println(previousMessage);
     }
 

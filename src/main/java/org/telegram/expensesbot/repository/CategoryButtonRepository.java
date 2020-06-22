@@ -13,6 +13,7 @@ public interface CategoryButtonRepository extends CrudRepository<CategoryButton,
     List<CategoryButton> findByChatId(long chatId);
     long deleteByCategoryAndChatId(String category, long chatId);
     boolean existsCategoryButtonByCategoryAndChatId(String category, long chatId);
+    long deleteAllByChatId(long chatId);
 
     @Modifying
     @Query("update CategoryButton button set button.expenses = ?1 where button.chatId = ?2")
