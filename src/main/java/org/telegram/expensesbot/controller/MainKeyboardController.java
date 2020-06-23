@@ -1,6 +1,7 @@
 package org.telegram.expensesbot.controller;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -9,7 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.telegram.expensesbot.ExpensesCalculator;
 import org.telegram.expensesbot.ExpensesParser;
 import org.telegram.expensesbot.model.CategoryButton;
 import org.telegram.expensesbot.service.CategoryButtonService;
@@ -17,26 +17,18 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 
 @Component
 public class MainKeyboardController {
-    private static final List<KeyboardRow> onlyHeaderdKeyboard = new ArrayList<>();
     private static final String CATEGORIES_CONTROL = "'Управление категориями'";
     private static final String SUMMARY = "Суммарно";
-    private static int headerRowsNumber = 2;
+    private static final int HEADER_ROWS_NUMBER = 2;
     private static final Logger log = LoggerFactory.getLogger(MainKeyboardController.class);
-    private final ExpensesCalculator expensesCalculator = new ExpensesCalculator();
-    private long chatId;
+    private long chatId = 0;
     private final Map<Long, List<KeyboardRow>> cache = new HashMap<>();
 
     @Autowired
     private CategoryButtonService buttonService;
 
-
-
     public void setChatId(long chatId) {
         this.chatId = chatId;
-    }
-
-    public MainKeyboardController() {
-        initHeader(onlyHeaderdKeyboard);
     }
 
     public List<KeyboardRow> addCategory(String name) {
@@ -83,6 +75,69 @@ public class MainKeyboardController {
         return cache.get(chatId);
     }
 
+    public List<KeyboardRow> resetExpenses() {
+        final int resultExpenses = 0;
+
+        resetDBExpenses(resultExpenses);
+
+        if (cache.containsKey(chatId)) {
+            log.info("reset cache expenses for chat: {}", chatId);
+
+            resetCacheExpenses(resultExpenses);
+            return cache.get(chatId);
+        }
+
+        return fillEmptyKeyboard();
+    }
+
+    private void resetDBExpenses(final int resultExpenses) {
+        log.info("reset DB expenses for chat: {}", chatId);
+        buttonService.updateAllExpensesByChatId(resultExpenses, chatId);
+    }
+
+    private void resetCacheExpenses(final int resultExpenses) {
+        List<KeyboardRow> cacheKeyboard = cache.get(chatId);
+
+        for (int i = HEADER_ROWS_NUMBER; i < cacheKeyboard.size(); i++) {
+            cacheKeyboard.get(i).forEach(button -> {
+                String category = ExpensesParser.parseCategoryName(button.getText());
+                String buttonName = combineButtonName(category, resultExpenses);
+
+                button.setText(buttonName);
+            });
+        }
+    }
+
+    public List<KeyboardRow> removeUserExpenses() {
+        buttonService.deleteAllByChatId(chatId);
+        cache.remove(chatId);
+
+        List<KeyboardRow> keyboard = new ArrayList<>();
+        initHeader(keyboard);
+
+        return keyboard;
+    }
+
+    public List<KeyboardRow> changeButtonExpenses(String category, String expensesMessage) {
+        CategoryButton categoryButton = buttonService.findByCategoryAndChatId(category, chatId);
+        int currentExpenses = categoryButton.getExpenses();
+        int resultExpenses = calculateResultExpenses(currentExpenses, expensesMessage);
+
+        buttonService.updateCategoryButtonExpenses(resultExpenses, category, chatId);
+
+        return fillEmptyKeyboard();
+    }
+
+    private int calculateResultExpenses(int currentExpenses, String expensesMessage) {
+        String[] expensesLines = ExpensesParser.splitByNewLine(expensesMessage);
+
+        for (String line : expensesLines) {
+            currentExpenses += ExpensesParser.parseExpenses(line);
+        }
+
+        return currentExpenses;
+    }
+
     private List<KeyboardRow> fillEmptyKeyboard() {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
@@ -108,13 +163,15 @@ public class MainKeyboardController {
 
     private void addSecondRow(List<KeyboardRow> keyboard) {
         KeyboardRow secondRow = new KeyboardRow();
+        long summaryExpenses = buttonService.calculateSummaryExpenses(chatId);
+        String summaryExpensesButtonName = String.format("'%s - %d'", SUMMARY, summaryExpenses);
 
-        secondRow.add("'" + SUMMARY + " - 0'");
+        secondRow.add(summaryExpensesButtonName);
         keyboard.add(secondRow);
     }
 
     private void fillKeyboardFromDB(List<KeyboardRow> keyboard) {
-        List<CategoryButton> keyboardButtons = buttonService.findByChatId(chatId);
+        List<CategoryButton> keyboardButtons = buttonService.findByChatIdOrderById(chatId);
         KeyboardController keyboardController = new KeyboardController(keyboard);
 
         keyboardButtons.forEach(keyboardButton -> {
@@ -124,52 +181,6 @@ public class MainKeyboardController {
 
             keyboardController.addButton(buttonName);
         });
-    }
-
-    public List<KeyboardRow> resetExpenses() {
-        final int resultExpenses = 0;
-
-        resetDBExpenses(resultExpenses);
-
-        if (cache.containsKey(chatId)) {
-            log.info("reset cache expenses for chat: {}", chatId);
-
-            resetCacheExpenses(resultExpenses);
-            return cache.get(chatId);
-        }
-
-        return fillEmptyKeyboard();
-    }
-
-    private void resetDBExpenses(final int resultExpenses) {
-        log.info("reset DB expenses for chat: {}", chatId);
-        buttonService.updateExpenses(resultExpenses, chatId);
-    }
-
-    private void resetCacheExpenses(final int resultExpenses) {
-        List<KeyboardRow> cacheKeyboard = cache.get(chatId);
-
-        for (int i = headerRowsNumber; i < cacheKeyboard.size(); i++) {
-            cacheKeyboard.get(i).forEach(button -> {
-                String category = ExpensesParser.parseCategoryName(button.getText());
-                String buttonName = combineButtonName(category, resultExpenses);
-
-                button.setText(buttonName);
-            });
-        }
-    }
-
-    public List<KeyboardRow> removeUserExpenses() {
-        List<KeyboardRow> keyboard = new ArrayList<>();
-        initHeader(keyboard);
-        buttonService.deleteAllByChatId(chatId);
-        cache.remove(chatId);
-
-        return keyboard;
-    }
-
-    public void changeButtonExpenses(String categoryMessage, String expensesMessage) {
-
     }
 
     public boolean isSummaryButton(String message) {
@@ -197,7 +208,9 @@ public class MainKeyboardController {
         return String.format("'%s - %d'", name, expenses);
     }
 
-    public List<KeyboardRow> getKeyboard() {
-        return onlyHeaderdKeyboard;
+    public List<KeyboardRow> getOnlyHeadedKeyboard() {
+        List<KeyboardRow> onlyHeadedKeyboard = new ArrayList<>();
+        initHeader(onlyHeadedKeyboard);
+        return onlyHeadedKeyboard;
     }
 }

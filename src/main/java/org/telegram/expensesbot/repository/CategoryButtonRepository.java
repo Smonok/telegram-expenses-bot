@@ -10,12 +10,24 @@ import org.telegram.expensesbot.model.CategoryButton;
 @Repository
 public interface CategoryButtonRepository extends CrudRepository<CategoryButton, Long> {
 
-    List<CategoryButton> findByChatId(long chatId);
+    List<CategoryButton> findByChatIdOrderById(long chatId);
+
     long deleteByCategoryAndChatId(String category, long chatId);
+
+    CategoryButton findByCategoryAndChatId(String category, long chatId);
+
     boolean existsCategoryButtonByCategoryAndChatId(String category, long chatId);
+
     long deleteAllByChatId(long chatId);
 
     @Modifying
     @Query("update CategoryButton button set button.expenses = ?1 where button.chatId = ?2")
-    int updateCategoryButtonExpenses(int expenses, long chatId);
+    int updateAllExpensesByChatId(int expenses, long chatId);
+
+    @Modifying
+    @Query("update CategoryButton button set button.expenses = ?1 where button.category = ?2 and button.chatId = ?3")
+    int updateCategoryButtonExpenses(int expenses, String category, long chatId);
+
+    @Query("select sum(expenses) from CategoryButton where chatId = ?1")
+    long calculateSummaryExpenses(long chatId);
 }

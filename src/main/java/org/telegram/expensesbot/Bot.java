@@ -43,9 +43,9 @@ public class Bot extends TelegramLongPollingBot {
                 deleteButton();
                 handleCategoriesControlButton();
                 addButtonIfNewCategoryPrevious();
-                //handleSummaryButton();
-                //handleCategoryButton();
-                //handleExpensesLines();
+                handleCategoryButton();
+                handleExpensesLines();
+                //handleSummaryButton();  //For report
 
                 previousMessage = messageText;
             }
@@ -67,17 +67,16 @@ public class Bot extends TelegramLongPollingBot {
         }
     }
 
-
     private void addButtonIfNewCategoryPrevious() {
         if (previousMessage.equals("Новая категория")) {
             if (messageText.charAt(0) != '\'') {
-                if(mainKeyboard.isCategoryExists(messageText)){
+                if (mainKeyboard.isCategoryExists(messageText)) {
                     sendTextMessage("Извините, категория с таким\nназванием уже существует");
-                }else {
+                } else {
                     sendReplyKeyboardMessage("Добавление успешно", mainKeyboard.addCategory(messageText));
                 }
             } else {
-                sendReplyKeyboardMessage("Недопустимый символ -> '", mainKeyboard.getKeyboard());
+                sendReplyKeyboardMessage("Недопустимый символ -> '", mainKeyboard.getOnlyHeadedKeyboard());
             }
         }
     }
@@ -87,14 +86,6 @@ public class Bot extends TelegramLongPollingBot {
             if (mainKeyboard.isCategoryButton(messageText)) {
                 sendReplyKeyboardMessage("Удаление успешно", mainKeyboard.deleteCategory(messageText));
             }
-        }
-    }
-
-    private void handleSummaryButton() {
-        if (mainKeyboard.isSummaryButton(messageText)) {
-            sendInlineKeyboardMessage("Выберите период времени за который\n" +
-                    "вы хотите получить отчёт по всем категориям",
-                expensesReportKeyboard.getKeyboard());
         }
     }
 
@@ -109,14 +100,15 @@ public class Bot extends TelegramLongPollingBot {
 
     private void handleExpensesLines() {
         if (ExpensesParser.isExpensesLines(messageText)) {
-            mainKeyboard.changeButtonExpenses(category, messageText);
-            sendReplyKeyboardMessage("Изменено", mainKeyboard.getKeyboard());
+            sendReplyKeyboardMessage("Изменено", mainKeyboard.changeButtonExpenses(category, messageText));
+        }
+    }
 
-            String[] lines = ExpensesParser.splitByNewLine(messageText);
-
-            for (String line : lines) {
-                allTimeReport.add(line);
-            }
+    private void handleSummaryButton() {
+        if (mainKeyboard.isSummaryButton(messageText)) {
+            sendInlineKeyboardMessage("Выберите период времени за который\n" +
+                    "вы хотите получить отчёт по всем категориям",
+                expensesReportKeyboard.getKeyboard());
         }
     }
 

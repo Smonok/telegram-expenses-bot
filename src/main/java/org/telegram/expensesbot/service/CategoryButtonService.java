@@ -20,13 +20,18 @@ public class CategoryButtonService implements DefaultCategoryButtonService {
     }
 
     @Override
-    public List<CategoryButton> findByChatId(long userId) {
-        return categoryButtonRepository.findByChatId(userId);
+    public List<CategoryButton> findByChatIdOrderById(long chatId) {
+        return categoryButtonRepository.findByChatIdOrderById(chatId);
     }
 
     @Override
     public long deleteByCategoryAndChatId(String category, long chatId) {
         return categoryButtonRepository.deleteByCategoryAndChatId(category, chatId);
+    }
+
+    @Override
+    public CategoryButton findByCategoryAndChatId(String category, long chatId) {
+        return categoryButtonRepository.findByCategoryAndChatId(category, chatId);
     }
 
     @Override
@@ -40,7 +45,17 @@ public class CategoryButtonService implements DefaultCategoryButtonService {
     }
 
     @Override
-    public int updateExpenses(int expenses, long chatId) {
-        return categoryButtonRepository.updateCategoryButtonExpenses(expenses, chatId);
+    public int updateAllExpensesByChatId(int expenses, long chatId) {
+        return categoryButtonRepository.updateAllExpensesByChatId(expenses, chatId);
+    }
+
+    @Override
+    public int updateCategoryButtonExpenses(int expenses, String category, long chatId) {
+        return categoryButtonRepository.updateCategoryButtonExpenses(expenses, category, chatId);
+    }
+
+    @Override
+    public long calculateSummaryExpenses(long chatId) {
+        return categoryButtonRepository.calculateSummaryExpenses(chatId);
     }
 }
