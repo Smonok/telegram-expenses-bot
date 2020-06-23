@@ -56,6 +56,7 @@ public class MainKeyboardController {
 
     public List<KeyboardRow> deleteCategory(String buttonName) {
         String category = ExpensesParser.parseCategoryName(buttonName);
+        System.out.println("category: " + category);
         log.info("deleteCategory method: ->{}<- for chat: {}", buttonName, chatId);
         buttonService.deleteByCategoryAndChatId(category, chatId);
 

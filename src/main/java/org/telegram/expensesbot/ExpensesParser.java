@@ -19,7 +19,7 @@ public class ExpensesParser {
     }
 
     public static String parseCategoryName(String message) {
-        return StringUtils.substringBefore(message, "-").trim().substring(1);
+        return StringUtils.substringBeforeLast(message, "-").trim().substring(1);
     }
 
     public static String[] parseForReport(String message) {
