@@ -15,8 +15,8 @@ public class CategoryButtonService implements DefaultCategoryButtonService {
     private CategoryButtonRepository categoryButtonRepository;
 
     @Override
-    public CategoryButton add(CategoryButton mainKeyboard) {
-        return categoryButtonRepository.save(mainKeyboard);
+    public CategoryButton add(CategoryButton categoryButton) {
+        return categoryButtonRepository.save(categoryButton);
     }
 
     @Override

@@ -9,10 +9,10 @@ import org.telegram.telegrambots.ApiContextInitializer;
 @EnableJpaRepositories("org.telegram.expensesbot.repository")
 @EntityScan("org.telegram.expensesbot.model")
 @SpringBootApplication
-public class TelegramBotApplication  {
+public class TelegramBotApplication {
 
     public static void main(String[] args) {
         ApiContextInitializer.init();
-        SpringApplication.run(TelegramBotApplication .class, args);
+        SpringApplication.run(TelegramBotApplication.class, args);
     }
 }

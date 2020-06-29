@@ -28,8 +28,6 @@ public class Bot extends TelegramLongPollingBot {
     String messageText = "";
     private String category = " ";
 
-    List<String> allTimeReport = new ArrayList<>();
-
     @Override
     public void onUpdateReceived(Update update) {
         message = update.getMessage();
@@ -92,7 +90,7 @@ public class Bot extends TelegramLongPollingBot {
     private void handleCategoryButton() {
         if (mainKeyboard.isCategoryButton(messageText)) {
             category = ExpensesParser.parseCategoryName(messageText);
-            sendTextMessage("Для добавления расходов\nпришлите строку в формате:\nсумма - название");
+            sendTextMessage("Для добавления расходов\nпришлите строку или строки\nв формате: сумма - название");
             sendInlineKeyboardMessage("Выберите период времени за который\nвы хотите получить отчёт",
                 expensesReportKeyboard.getKeyboard());
         }

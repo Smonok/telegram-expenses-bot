@@ -5,7 +5,7 @@ import org.telegram.expensesbot.model.CategoryButton;
 
 public interface DefaultCategoryButtonService {
 
-    CategoryButton add(CategoryButton mainKeyboard);
+    CategoryButton add(CategoryButton categoryButton);
 
     List<CategoryButton> findByChatIdOrderById(long chatId);
 

@@ -14,6 +14,10 @@ public class ExpensesParser {
         return Integer.parseInt(message.split("-")[0].trim());
     }
 
+    public static String parseReasons(String message){
+        return StringUtils.substringAfterLast(message, "-").trim();
+    }
+
     public static String[] splitByNewLine(String message) {
         return message.split("\\r?\\n");
     }

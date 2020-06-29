@@ -1,7 +1,9 @@
 package org.telegram.expensesbot.controller;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -12,7 +14,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.expensesbot.ExpensesParser;
 import org.telegram.expensesbot.model.CategoryButton;
+import org.telegram.expensesbot.model.Report;
 import org.telegram.expensesbot.service.CategoryButtonService;
+import org.telegram.expensesbot.service.ReportService;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
 @Component
@@ -26,6 +30,9 @@ public class MainKeyboardController {
 
     @Autowired
     private CategoryButtonService buttonService;
+
+    @Autowired
+    private ReportService reportService;
 
     public void setChatId(long chatId) {
         this.chatId = chatId;
@@ -56,8 +63,7 @@ public class MainKeyboardController {
 
     public List<KeyboardRow> deleteCategory(String buttonName) {
         String category = ExpensesParser.parseCategoryName(buttonName);
-        System.out.println("category: " + category);
-        log.info("deleteCategory method: ->{}<- for chat: {}", buttonName, chatId);
+        log.info("deleteCategory: ->{}<- for chat: {}", buttonName, chatId);
         buttonService.deleteByCategoryAndChatId(category, chatId);
 
         if (cache.containsKey(chatId)) {
@@ -123,10 +129,28 @@ public class MainKeyboardController {
         CategoryButton categoryButton = buttonService.findByCategoryAndChatId(category, chatId);
         int currentExpenses = categoryButton.getExpenses();
         int resultExpenses = calculateResultExpenses(currentExpenses, expensesMessage);
+        Report report = new Report();
+
+        report.setChatId(chatId);
+        report.setCategory(category);
 
         buttonService.updateCategoryButtonExpenses(resultExpenses, category, chatId);
+        saveReport(category, expensesMessage);
 
         return fillEmptyKeyboard();
+    }
+
+    private void saveReport(String category, String expensesMessage) {
+        String[] expensesLines = ExpensesParser.splitByNewLine(expensesMessage);
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.yyy");
+        String date = simpleDateFormat.format(new Date());
+
+        Arrays.stream(expensesLines).forEach(line -> {
+            int subexpenses = ExpensesParser.parseExpenses(line);
+            String reasons = ExpensesParser.parseReasons(line);
+
+            reportService.add(new Report(chatId, category, subexpenses, reasons, date));
+        });
     }
 
     private int calculateResultExpenses(int currentExpenses, String expensesMessage) {
