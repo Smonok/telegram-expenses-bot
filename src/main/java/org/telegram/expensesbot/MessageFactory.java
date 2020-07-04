@@ -1,8 +1,9 @@
 package org.telegram.expensesbot;
 
-
 import java.util.List;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -10,7 +11,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMar
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
-public class SendMessageFactory {
+public class MessageFactory {
     private static final ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
     private static final InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
 
@@ -20,6 +21,7 @@ public class SendMessageFactory {
         if (message != null) {
             sendMessage.setChatId(message.getChatId());
             sendMessage.setReplyToMessageId(message.getMessageId());
+            sendMessage.enableMarkdown(true);
         }
         return sendMessage;
     }
@@ -64,16 +66,34 @@ public class SendMessageFactory {
     }
 
     public static SendMessage initCallbackSendMessage(Update update) {
-        return new SendMessage().setChatId(update.getCallbackQuery().getMessage().getChatId());
+        return new SendMessage().setChatId(update.getCallbackQuery().getMessage().getChatId()).enableMarkdown(true);
     }
 
     public static SendMessage initCallbackReplyKeyboardSendMessage(Update update, List<KeyboardRow> keyboard) {
         SendMessage sendMessage = new SendMessage().setChatId(update.getCallbackQuery().getMessage().getChatId());
         configureReplyKeyboardMarkup(keyboard);
         sendMessage.setReplyMarkup(replyKeyboardMarkup);
+        sendMessage.enableMarkdown(true);
 
         return sendMessage;
     }
 
+    public static SendDocument initCallbackSendDocument(Update update, String caption) {
+        SendDocument sendDocumentRequest = new SendDocument();
+        sendDocumentRequest.setChatId(update.getCallbackQuery().getMessage().getChatId());
+        sendDocumentRequest.setCaption(caption);
+        return sendDocumentRequest;
+    }
 
+    public static EditMessageText initEditMessageText(Update update, List<List<InlineKeyboardButton>> keyboard) {
+        int messageId = update.getCallbackQuery().getMessage().getMessageId();
+        long chatId = update.getCallbackQuery().getMessage().getChatId();
+        String inlineMessageId = update.getCallbackQuery().getInlineMessageId();
+
+        return new EditMessageText()
+            .setChatId(chatId)
+            .setMessageId(messageId)
+            .setInlineMessageId(inlineMessageId)
+            .setReplyMarkup(new InlineKeyboardMarkup(keyboard));
+    }
 }

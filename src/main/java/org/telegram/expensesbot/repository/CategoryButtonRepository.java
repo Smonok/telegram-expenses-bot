@@ -12,13 +12,13 @@ public interface CategoryButtonRepository extends CrudRepository<CategoryButton,
 
     List<CategoryButton> findByChatIdOrderById(long chatId);
 
-    long deleteByCategoryAndChatId(String category, long chatId);
+    Long deleteByCategoryAndChatId(String category, long chatId);
 
     CategoryButton findByCategoryAndChatId(String category, long chatId);
 
     boolean existsCategoryButtonByCategoryAndChatId(String category, long chatId);
 
-    long deleteAllByChatId(long chatId);
+    Long deleteAllByChatId(long chatId);
 
     @Modifying
     @Query("update CategoryButton button set button.expenses = ?1 where button.chatId = ?2")
@@ -29,5 +29,5 @@ public interface CategoryButtonRepository extends CrudRepository<CategoryButton,
     int updateCategoryButtonExpenses(int expenses, String category, long chatId);
 
     @Query("select sum(expenses) from CategoryButton where chatId = ?1")
-    long calculateSummaryExpenses(long chatId);
+    Long calculateSummaryExpenses(long chatId);
 }

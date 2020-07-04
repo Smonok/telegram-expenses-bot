@@ -25,7 +25,7 @@ public class CategoryButtonService implements DefaultCategoryButtonService {
     }
 
     @Override
-    public long deleteByCategoryAndChatId(String category, long chatId) {
+    public Long deleteByCategoryAndChatId(String category, long chatId) {
         return categoryButtonRepository.deleteByCategoryAndChatId(category, chatId);
     }
 
@@ -40,7 +40,7 @@ public class CategoryButtonService implements DefaultCategoryButtonService {
     }
 
     @Override
-    public long deleteAllByChatId(long chatId) {
+    public Long deleteAllByChatId(long chatId) {
         return categoryButtonRepository.deleteAllByChatId(chatId);
     }
 
@@ -55,7 +55,7 @@ public class CategoryButtonService implements DefaultCategoryButtonService {
     }
 
     @Override
-    public long calculateSummaryExpenses(long chatId) {
+    public Long calculateSummaryExpenses(long chatId) {
         return categoryButtonRepository.calculateSummaryExpenses(chatId);
     }
 }

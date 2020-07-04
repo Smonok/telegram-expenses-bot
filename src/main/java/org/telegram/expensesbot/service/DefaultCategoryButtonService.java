@@ -9,17 +9,17 @@ public interface DefaultCategoryButtonService {
 
     List<CategoryButton> findByChatIdOrderById(long chatId);
 
-    long deleteByCategoryAndChatId(String category, long chatId);
+    Long deleteByCategoryAndChatId(String category, long chatId);
 
     CategoryButton findByCategoryAndChatId(String category, long chatId);
 
     boolean existsCategoryButtonByCategoryAndChatId(String category, long chatId);
 
-    long deleteAllByChatId(long chatId);
+    Long deleteAllByChatId(long chatId);
 
     int updateAllExpensesByChatId(int expenses, long chatId);
 
     int updateCategoryButtonExpenses(int expenses, String category, long chatId);
 
-    long calculateSummaryExpenses(long chatId);
+    Long calculateSummaryExpenses(long chatId);
 }

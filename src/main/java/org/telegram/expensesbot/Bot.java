@@ -1,12 +1,16 @@
 package org.telegram.expensesbot;
 
+import java.io.File;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 import org.telegram.expensesbot.controller.MainKeyboardController;
+import org.telegram.expensesbot.controller.ReportController;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
@@ -20,9 +24,11 @@ public class Bot extends TelegramLongPollingBot {
     private final ExpensesReportKeyboard expensesReportKeyboard = new ExpensesReportKeyboard();
     private final CategoriesControlKeyboard categoriesControlKeyboard = new CategoriesControlKeyboard();
 
-
     @Autowired
     private MainKeyboardController mainKeyboard;
+    @Autowired
+    private ReportController reportController = new ReportController();
+
     private String previousMessage = "";
     private Message message;
     String messageText = "";
@@ -36,6 +42,7 @@ public class Bot extends TelegramLongPollingBot {
             if (message != null && message.hasText()) {
                 messageText = message.getText();
                 mainKeyboard.setChatId(message.getChatId());
+                reportController.setChatId(message.getChatId());
 
                 initStart();
                 deleteButton();
@@ -43,12 +50,14 @@ public class Bot extends TelegramLongPollingBot {
                 addButtonIfNewCategoryPrevious();
                 handleCategoryButton();
                 handleExpensesLines();
-                //handleSummaryButton();  //For report
+                handleSummaryButton();
 
                 previousMessage = messageText;
             }
         } else if (update.hasCallbackQuery()) {
             handleCategoriesControlKeyboard(update);
+            handleReportTimeKeyboard(update);
+            handleReportFormatKeyboard(update);
         }
     }
 
@@ -90,9 +99,9 @@ public class Bot extends TelegramLongPollingBot {
     private void handleCategoryButton() {
         if (mainKeyboard.isCategoryButton(messageText)) {
             category = ExpensesParser.parseCategoryName(messageText);
-            sendTextMessage("Для добавления расходов\nпришлите строку или строки\nв формате: сумма - название");
-            sendInlineKeyboardMessage("Выберите период времени за который\nвы хотите получить отчёт",
-                expensesReportKeyboard.getKeyboard());
+            String text = "Для добавления расходов\nпришлите строку или строки\nв формате: сумма - название.\n"
+                + "Или выберите период времени,\nдля получения отчёта";
+            sendInlineKeyboardMessage(text, expensesReportKeyboard.createTimeIntervalsKeyboard());
         }
     }
 
@@ -104,9 +113,9 @@ public class Bot extends TelegramLongPollingBot {
 
     private void handleSummaryButton() {
         if (mainKeyboard.isSummaryButton(messageText)) {
-            sendInlineKeyboardMessage("Выберите период времени за который\n" +
+            sendInlineKeyboardMessage("Выберите период времени, за который\n" +
                     "вы хотите получить отчёт по всем категориям",
-                expensesReportKeyboard.getKeyboard());
+                expensesReportKeyboard.createTimeIntervalsKeyboard());
         }
     }
 
@@ -114,7 +123,7 @@ public class Bot extends TelegramLongPollingBot {
         String buttonData = update.getCallbackQuery().getData();
 
         if (buttonData.equals("newCategory")) {
-            sendTextMessageIfCallback("Пришлите имя категории\nНапример: Продукты", update);
+            sendTextMessageIfCallback("Пришлите имя категории", update);
             previousMessage = "Новая категория";
         } else if (buttonData.equals("deleteCategory")) {
             sendTextMessageIfCallback("Выберите категорию для удаления", update);
@@ -123,13 +132,61 @@ public class Bot extends TelegramLongPollingBot {
             sendKeyboardMessageIfCallback("Счета обнулены\nПоздравляем с новым периодом в жизни!",
                 update, mainKeyboard.resetExpenses());
         }
-
-        System.out.println(previousMessage);
     }
 
-    /************* BOT Methods *****************/
+    private void handleReportTimeKeyboard(Update update) {
+        String buttonData = update.getCallbackQuery().getData();
+        //TODO: Отдельно для суммарно, отдельно для каждой категории
+        if (buttonData.equals("allTime")) {
+            changeToReportFormatKeyboard(update);
+            previousMessage = "Всё время";
+        } else if (buttonData.equals("halfYear")) {
+            changeToReportFormatKeyboard(update);
+            previousMessage = "Пол года";
+        } else if (buttonData.equals("month")) {
+            changeToReportFormatKeyboard(update);
+            previousMessage = "Месяц";
+        } else if (buttonData.equals("week")) {
+            changeToReportFormatKeyboard(update);
+            previousMessage = "Неделя";
+        }
+    }
+
+    private void changeToReportFormatKeyboard(Update update) {
+        String text = "Выберете формат отчёта";
+        List<List<InlineKeyboardButton>> keyboard = expensesReportKeyboard.createReportFormatKeyboard();
+        changeInlineKeyboardMessage(update, keyboard, text);
+    }
+
+    private void handleReportFormatKeyboard(Update update) {
+        String buttonData = update.getCallbackQuery().getData();
+
+        if (buttonData.equals("messageFormat")) {
+            sendTextMessageIfCallback(reportController.createAllTimeReportMessage(), update);
+            previousMessage = "Сообщение";
+        } else if (buttonData.equals("fileFormat")) {
+            File document = null;
+            //TODO: Вариации отчётов
+            switch (previousMessage) {
+                case "Всё время":
+                    document = reportController.createAllTimeFileReport();
+                    break;
+            }
+
+            String text = "Файл с отчётом";
+            sendDocument(text, update, document);
+            previousMessage = "Файл";
+        } else if (buttonData.equals("back")) {
+            String text = "Выберите период времени, за который\n" +
+                "вы хотите получить отчёт по всем категориям";
+            List<List<InlineKeyboardButton>> keyboard = expensesReportKeyboard.createTimeIntervalsKeyboard();
+            changeInlineKeyboardMessage(update, keyboard, text);
+            previousMessage = "Назад";
+        }
+    }
+
     public void sendKeyboardMessageIfCallback(String text, Update update, List<KeyboardRow> keyboard) {
-        SendMessage sendMessage = SendMessageFactory.initCallbackReplyKeyboardSendMessage(update, keyboard);
+        SendMessage sendMessage = MessageFactory.initCallbackReplyKeyboardSendMessage(update, keyboard);
 
         try {
             execute(sendMessage.setText(text));
@@ -139,7 +196,7 @@ public class Bot extends TelegramLongPollingBot {
     }
 
     public void sendTextMessageIfCallback(String text, Update update) {
-        SendMessage sendMessage = SendMessageFactory.initCallbackSendMessage(update);
+        SendMessage sendMessage = MessageFactory.initCallbackSendMessage(update);
 
         try {
             execute(sendMessage.setText(text));
@@ -149,8 +206,7 @@ public class Bot extends TelegramLongPollingBot {
     }
 
     public void sendInlineKeyboardMessage(String text, List<List<InlineKeyboardButton>> keyboard) {
-        //List<List<InlineKeyboardButton>> keyboard = expensesReportKeyboard.getKeyboard();
-        SendMessage sendMessage = SendMessageFactory.initInlineKeyboardSendMessage(message, keyboard);
+        SendMessage sendMessage = MessageFactory.initInlineKeyboardSendMessage(message, keyboard);
 
         try {
             execute(sendMessage.setText(text));
@@ -160,7 +216,7 @@ public class Bot extends TelegramLongPollingBot {
     }
 
     private void sendTextMessage(String text) {
-        SendMessage sendMessage = SendMessageFactory.initSendMessage(message);
+        SendMessage sendMessage = MessageFactory.initSendMessage(message);
 
         try {
             execute(sendMessage.setText(text));
@@ -170,10 +226,30 @@ public class Bot extends TelegramLongPollingBot {
     }
 
     private void sendReplyKeyboardMessage(String text, List<KeyboardRow> keyboard) {
-        SendMessage sendMessage = SendMessageFactory.initReplyKeyboardSendMessage(message, keyboard);
+        SendMessage sendMessage = MessageFactory.initReplyKeyboardSendMessage(message, keyboard);
 
         try {
             execute(sendMessage.setText(text));
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void sendDocument(String text, Update update, File document) {
+        SendDocument sendDocument = MessageFactory.initCallbackSendDocument(update, text);
+
+        try {
+            execute(sendDocument.setDocument(document));
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void changeInlineKeyboardMessage(Update update, List<List<InlineKeyboardButton>> keyboard, String text) {
+        EditMessageText editedMessage = MessageFactory.initEditMessageText(update, keyboard);
+
+        try {
+            sendApiMethod(editedMessage.setText(text));
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }

@@ -9,7 +9,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table
-public class Report {
+public class Subexpenses {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
@@ -78,10 +78,15 @@ public class Report {
         this.date = date;
     }
 
-    public Report() {
+    @Override
+    public String toString() {
+        return String.format("%d - _%s_, %s", subexpenses, reasons, date);
     }
 
-    public Report(long chatId, String category, int subexpenses, String reasons, String date) {
+    public Subexpenses() {
+    }
+
+    public Subexpenses(long chatId, String category, int subexpenses, String reasons, String date) {
         this.chatId = chatId;
         this.category = category;
         this.subexpenses = subexpenses;
