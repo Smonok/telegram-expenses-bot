@@ -1,11 +1,11 @@
-package org.telegram.expensesbot;
+package org.telegram.expensesbot.keyboards;
 
 import java.util.ArrayList;
 import java.util.List;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 public class CategoriesControlKeyboard {
-    private List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
+    private final List<List<InlineKeyboardButton>> keyboard = new ArrayList<>();
 
     public CategoriesControlKeyboard() {
         List<InlineKeyboardButton> firstRow = new ArrayList<>();
@@ -26,16 +26,6 @@ public class CategoriesControlKeyboard {
         button.setText(text);
         button.setCallbackData(callbackData);
         return button;
-    }
-
-    public String getButtonTextByData(String data) {
-        for (List<InlineKeyboardButton> rows : keyboard) {
-            return rows.stream()
-                    .filter(buttons -> buttons.getCallbackData().equals(data))
-                    .findAny()
-                    .orElse(new InlineKeyboardButton("")).getText();
-        }
-        return "";
     }
 
     public List<List<InlineKeyboardButton>> getKeyboard() {

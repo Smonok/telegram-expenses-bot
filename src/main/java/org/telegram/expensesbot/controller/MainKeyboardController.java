@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.telegram.expensesbot.ExpensesParser;
+import org.telegram.expensesbot.util.ExpensesParserUtil;
 import org.telegram.expensesbot.model.CategoryButton;
 import org.telegram.expensesbot.model.Subexpenses;
 import org.telegram.expensesbot.service.CategoryButtonService;
@@ -59,7 +59,7 @@ public class MainKeyboardController {
     }
 
     public List<KeyboardRow> deleteCategory(String buttonName) {
-        String category = ExpensesParser.parseCategoryName(buttonName);
+        String category = ExpensesParserUtil.parseCategoryName(buttonName);
         log.info("deleteCategory: ->{}<- for chat: {}", buttonName, chatId);
         buttonService.deleteByCategoryAndChatId(category, chatId);
 
@@ -106,10 +106,11 @@ public class MainKeyboardController {
 
     private void resetCacheExpenses(final int resultExpenses) {
         List<KeyboardRow> cacheKeyboard = cache.get(chatId);
+        cacheKeyboard.get(1).get(0).setText("'Суммарно - 0'");
 
         for (int i = HEADER_ROWS_NUMBER; i < cacheKeyboard.size(); i++) {
             cacheKeyboard.get(i).forEach(button -> {
-                String category = ExpensesParser.parseCategoryName(button.getText());
+                String category = ExpensesParserUtil.parseCategoryName(button.getText());
                 String buttonName = combineButtonName(category, resultExpenses);
 
                 button.setText(buttonName);
@@ -144,29 +145,29 @@ public class MainKeyboardController {
     }
 
     private void saveReport(String category, String expensesMessage) {
-        String[] expensesLines = ExpensesParser.splitByNewLine(expensesMessage);
+        String[] expensesLines = ExpensesParserUtil.splitByNewLine(expensesMessage);
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.yyy");
         String date = simpleDateFormat.format(new Date());
 
         Arrays.stream(expensesLines).forEach(line -> {
-            int subexpenses = ExpensesParser.parseExpenses(line);
-            String reasons = ExpensesParser.parseReasons(line);
+            int subexpenses = ExpensesParserUtil.parseExpenses(line);
+            String reasons = ExpensesParserUtil.parseReasons(line);
 
             subexpensesService.add(new Subexpenses(chatId, category, subexpenses, reasons, date));
         });
     }
 
     private int calculateResultExpenses(int currentExpenses, String expensesMessage) {
-        String[] expensesLines = ExpensesParser.splitByNewLine(expensesMessage);
+        String[] expensesLines = ExpensesParserUtil.splitByNewLine(expensesMessage);
 
         for (String line : expensesLines) {
-            currentExpenses += ExpensesParser.parseExpenses(line);
+            currentExpenses += ExpensesParserUtil.parseExpenses(line);
         }
 
         return currentExpenses;
     }
 
-    private List<KeyboardRow> fillEmptyKeyboard() {
+    public List<KeyboardRow> fillEmptyKeyboard() {
         List<KeyboardRow> keyboard = new ArrayList<>();
 
         initHeader(keyboard);
@@ -223,7 +224,7 @@ public class MainKeyboardController {
 
     public boolean isSummaryButton(String message) {
         if (message.charAt(0) == '\'') {
-            String buttonName = ExpensesParser.parseCategoryName(message);
+            String buttonName = ExpensesParserUtil.parseCategoryName(message);
             return buttonName.equals(SUMMARY);
         }
         return false;
@@ -231,7 +232,7 @@ public class MainKeyboardController {
 
     public boolean isCategoryButton(String buttonName) {
         if (buttonName.charAt(0) == '\'') {
-            String category = ExpensesParser.parseCategoryName(buttonName);
+            String category = ExpensesParserUtil.parseCategoryName(buttonName);
 
             return buttonService.existsCategoryButtonByCategoryAndChatId(category, chatId);
         }
@@ -244,12 +245,6 @@ public class MainKeyboardController {
 
     public String combineButtonName(String name, int expenses) {
         return String.format("'%s - %d'", name, expenses);
-    }
-
-    public List<KeyboardRow> getOnlyHeadedKeyboard() {
-        List<KeyboardRow> onlyHeadedKeyboard = new ArrayList<>();
-        initHeader(onlyHeadedKeyboard);
-        return onlyHeadedKeyboard;
     }
 
     public void setChatId(long chatId) {

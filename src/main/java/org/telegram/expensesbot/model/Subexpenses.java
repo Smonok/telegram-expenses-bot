@@ -80,7 +80,7 @@ public class Subexpenses {
 
     @Override
     public String toString() {
-        return String.format("%d - _%s_, %s", subexpenses, reasons, date);
+        return String.format("%d - <i>%s</i>, %s", subexpenses, reasons, date);
     }
 
     public Subexpenses() {

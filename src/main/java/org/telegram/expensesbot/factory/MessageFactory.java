@@ -1,4 +1,4 @@
-package org.telegram.expensesbot;
+package org.telegram.expensesbot.factory;
 
 import java.util.List;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
@@ -17,18 +17,18 @@ public class MessageFactory {
 
     public static SendMessage initSendMessage(Message message) {
         SendMessage sendMessage = new SendMessage();
-        sendMessage.enableMarkdown(true);
+
         if (message != null) {
             sendMessage.setChatId(message.getChatId());
             sendMessage.setReplyToMessageId(message.getMessageId());
-            sendMessage.enableMarkdown(true);
+            sendMessage.enableHtml(true);
         }
         return sendMessage;
     }
 
     public static SendMessage initReplyKeyboardSendMessage(Message message, List<KeyboardRow> keyboard) {
         SendMessage sendMessage = new SendMessage();
-        sendMessage.enableMarkdown(true);
+        sendMessage.enableHtml(true);
 
         if (message != null) {
             sendMessage.setChatId(message.getChatId());
@@ -51,7 +51,7 @@ public class MessageFactory {
     public static SendMessage initInlineKeyboardSendMessage(Message message,
         List<List<InlineKeyboardButton>> keyboard) {
         SendMessage sendMessage = new SendMessage();
-        sendMessage.enableMarkdown(true);
+        sendMessage.enableHtml(true);
         sendMessage.setChatId(message.getChatId());
         sendMessage.setReplyToMessageId(message.getMessageId());
 
@@ -66,14 +66,14 @@ public class MessageFactory {
     }
 
     public static SendMessage initCallbackSendMessage(Update update) {
-        return new SendMessage().setChatId(update.getCallbackQuery().getMessage().getChatId()).enableMarkdown(true);
+        return new SendMessage().setChatId(update.getCallbackQuery().getMessage().getChatId()).enableHtml(true);
     }
 
     public static SendMessage initCallbackReplyKeyboardSendMessage(Update update, List<KeyboardRow> keyboard) {
         SendMessage sendMessage = new SendMessage().setChatId(update.getCallbackQuery().getMessage().getChatId());
         configureReplyKeyboardMarkup(keyboard);
         sendMessage.setReplyMarkup(replyKeyboardMarkup);
-        sendMessage.enableMarkdown(true);
+        sendMessage.enableHtml(true);
 
         return sendMessage;
     }

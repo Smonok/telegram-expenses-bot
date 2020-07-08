@@ -1,4 +1,4 @@
-package org.telegram.expensesbot;
+package org.telegram.expensesbot.keyboards;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,9 +12,9 @@ public class ExpensesReportKeyboard {
         List<InlineKeyboardButton> secondRow = new ArrayList<>();
 
         firstRow.add(addButton("Всё время", "allTime"));
-        firstRow.add(addButton("Пол года", "halfYear"));
-        secondRow.add(addButton("Месяц", "month"));
-        secondRow.add(addButton("Неделя", "week"));
+        firstRow.add(addButton("6 месяцев", "sixMonth"));
+        secondRow.add(addButton("30 дней", "month"));
+        secondRow.add(addButton("7 дней", "sevenDays"));
 
         keyboard.add(firstRow);
         keyboard.add(secondRow);
