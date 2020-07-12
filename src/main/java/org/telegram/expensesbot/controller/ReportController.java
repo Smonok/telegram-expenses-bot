@@ -32,7 +32,7 @@ public class ReportController {
     public String createAllTimeReportMessage(String category) {
         report = new StringJoiner(System.lineSeparator());
 
-        report.add("<b>==❯ Отчёт за всё время ❮==</b>");
+        report.add("<b>❯ Отчёт за всё время ❮</b>");
         if (!StringUtils.isBlank(category)) {
             createReportByCategory(SQLConstants.ALL_TIME_DATE_SUBTRAHEND, category);
         }
@@ -42,7 +42,7 @@ public class ReportController {
     public String createHalfYearReportMessage(String category) {
         report = new StringJoiner(System.lineSeparator());
 
-        report.add("<b>==❯ Отчёт за последние 6 месяцев ❮==</b>");
+        report.add("<b>❯ Отчёт за последние 6 месяцев ❮</b>");
         if (!StringUtils.isBlank(category)) {
             createReportByCategory(SQLConstants.SIX_MONTHS_DATE_SUBTRAHEND, category);
         }
@@ -52,7 +52,7 @@ public class ReportController {
     public String createMonthReportMessage(String category) {
         report = new StringJoiner(System.lineSeparator());
 
-        report.add("<b>==❯ Отчёт за последние 30 дней ❮==</b>");
+        report.add("<b>❯ Отчёт за последние 30 дней ❮</b>");
         if (!StringUtils.isBlank(category)) {
             createReportByCategory(SQLConstants.ONE_MONTH_DATE_SUBTRAHEND, category);
         }
@@ -62,7 +62,7 @@ public class ReportController {
     public String createSevenDaysReportMessage(String category) {
         report = new StringJoiner(System.lineSeparator());
 
-        report.add("<b>==❯ Отчёт за последние 7 дней ❮==</b>");
+        report.add("<b>❯ Отчёт за последние 7 дней ❮</b>");
         if (!StringUtils.isBlank(category)) {
             createReportByCategory(SQLConstants.SEVEN_DAYS_DATE_SUBTRAHEND, category);
         }

@@ -75,7 +75,8 @@ public class SubexpensesService implements DefaultSubexpensesService {
             return 0L;
         }
 
-        return subexpensesRepository.findSumAfterSubtraction(chatId, subtrahend);
+        Long sum = subexpensesRepository.findSumAfterSubtraction(chatId, subtrahend);
+        return sum == null ? 0L : sum;
     }
 
     @Override
@@ -92,8 +93,8 @@ public class SubexpensesService implements DefaultSubexpensesService {
         if (chatId < 1 || StringUtils.isBlank(category) || StringUtils.isBlank(subtrahend)) {
             return 0L;
         }
-
-        return subexpensesRepository.findSumAfterSubtraction(chatId, category, subtrahend);
+        Long sum = subexpensesRepository.findSumAfterSubtraction(chatId, category, subtrahend);
+        return sum == null ? 0L : sum;
     }
 
     @Override
