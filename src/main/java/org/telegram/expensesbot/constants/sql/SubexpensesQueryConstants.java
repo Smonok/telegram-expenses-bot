@@ -13,7 +13,7 @@ public class SubexpensesQueryConstants {
         + "where\n"
         + " chat_id = ?1 and category like ?2 and\n"
         + " to_date(date, 'DD.MM.YYYY') >= (select now() - ( ?3 )\\:\\:interval)\n"
-        + "order by category\n";
+        + "order by category, to_date(date, 'DD.MM.YYYY') desc\n";
 
     public static final String FIND_SUM_BY_CATEGORY =
         "select sum(subexpenses) from (\n" + FIND_AFTER_SUBTRACTION_BY_CATEGORY + ") n2\n";

@@ -175,8 +175,7 @@ public class Bot extends TelegramLongPollingBot {
             sendTextMessageIfCallback(reportMessage, update);
             chatIdPreviousMessage.put(chatId, "Сообщение");
         } else if (buttonData.equals("fileFormat")) {
-            File document = null;
-            //TODO: After messages
+            File document = reportController.createAllTimeFileReport(category);
             String text = "Файл с отчётом";
             sendDocument(text, update, document);
             chatIdPreviousMessage.put(chatId, "Файл");

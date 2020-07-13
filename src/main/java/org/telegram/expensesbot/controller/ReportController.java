@@ -3,7 +3,12 @@ package org.telegram.expensesbot.controller;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.StringJoiner;
 import org.apache.commons.lang.StringUtils;
@@ -79,7 +84,7 @@ public class ReportController {
     private void createReportAfterDateSubtraction(String subtrahend) {
         List<Subexpenses> subexpenses = subexpensesService.
             findAllAfterSubtraction(chatId, category, subtrahend);
-        List<String> monthsYearBuffer = new ArrayList<>();
+        List<Date> monthsYearBuffer = new ArrayList<>();
         List<String> categoriesBuffer = new ArrayList<>();
 
         addGeneralExpensesToReport(subtrahend);
@@ -115,19 +120,30 @@ public class ReportController {
         }
     }
 
-    private void addToMonthYearBuffer(Subexpenses subexpenses, List<String> monthYearBuffer) {
-        String monthAndYear = subexpenses.getDate().substring(3);
+    private void addToMonthYearBuffer(Subexpenses subexpenses, List<Date> monthYearBuffer) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MM.yyyy");
+        try {
+            Date monthAndYear = dateFormat.parse(subexpenses.getDate().substring(3));
 
-        if (!monthYearBuffer.contains(monthAndYear)) {
-            monthYearBuffer.add(monthAndYear);
+            if (!monthYearBuffer.contains(monthAndYear)) {
+                monthYearBuffer.add(monthAndYear);
+            }
+        } catch (ParseException e) {
+            log.error("Cannot parse date: {} with date format pattern: {}",
+                subexpenses.getDate().substring(3), dateFormat.toPattern());
         }
     }
 
-    private void addMonthsExpensesToReport(String subtrahend, List<String> monthYearBuffer) {
+    private void addMonthsExpensesToReport(String subtrahend, List<Date> monthYearBuffer) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MM.yyyy");
+
+        monthYearBuffer.sort(Collections.reverseOrder());
+
         report.add("");
         monthYearBuffer.forEach(monthYear -> {
-            int monthNumber = Integer.parseInt(StringUtils.substringBefore(monthYear, "."));
-            int year = Integer.parseInt(StringUtils.substringAfter(monthYear, "."));
+            final String monthYearFormat = dateFormat.format(monthYear);
+            int monthNumber = Integer.parseInt(StringUtils.substringBefore(monthYearFormat, "."));
+            int year = Integer.parseInt(StringUtils.substringAfter(monthYearFormat, "."));
             String oneMonthExpenses = createMonthReportHeader(subtrahend, monthNumber, year);
             report.add(oneMonthExpenses);
 
@@ -146,34 +162,34 @@ public class ReportController {
         return String.format(BOLD_NAME_NUMBER_HEADER, monthYearName, summary);
     }
 
-    //TODO: After messages
     public File createAllTimeFileReport(String category) {
         String directoryPath = String.format("%s\\%d", REPORTS_PATH, chatId);
-        File directory = new File(directoryPath);
+        createDirectory(directoryPath);
 
-        if (!directory.exists() && directory.mkdirs()) {
-            log.info("Successfully created new directory : {}", directoryPath);
-        }
-
-        String filePath = String.format("%s\\summary_all_time_report.csv", directoryPath);
+        String filePath = String.format("%s\\summary_all_time_report.xlsx", directoryPath);
         File reportFile = new File(filePath);
 
-        String content = "EMPTY";
+        StringJoiner content = new StringJoiner(System.lineSeparator());
 
         try (FileOutputStream output = new FileOutputStream(reportFile)) {
             if (!reportFile.exists() && reportFile.createNewFile()) {
                 log.info("Successfully created new file : {}", filePath);
             }
 
-            byte[] contentInBytes = content.getBytes();
-
-            output.write(contentInBytes);
             output.flush();
         } catch (IOException e) {
             log.error("Cannot work with file: {}", filePath);
         }
 
         return reportFile;
+    }
+
+    private void createDirectory(String directoryPath) {
+        File directory = new File(directoryPath);
+
+        if (!directory.exists() && directory.mkdirs()) {
+            log.info("Successfully created new directory : {}", directoryPath);
+        }
     }
 
     public void setChatId(long chatId) {
