@@ -13,7 +13,7 @@ public class ExpensesReportKeyboard {
 
         firstRow.add(addButton("Всё время", "allTime"));
         firstRow.add(addButton("6 месяцев", "sixMonth"));
-        secondRow.add(addButton("30 дней", "month"));
+        secondRow.add(addButton("30 дней", "thirtyDays"));
         secondRow.add(addButton("7 дней", "sevenDays"));
 
         keyboard.add(firstRow);

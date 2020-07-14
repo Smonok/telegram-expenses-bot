@@ -8,8 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import org.telegram.expensesbot.controller.FileReportController;
 import org.telegram.expensesbot.controller.MainKeyboardController;
-import org.telegram.expensesbot.controller.ReportController;
+import org.telegram.expensesbot.controller.MessageReportController;
 import org.telegram.expensesbot.factory.MessageFactory;
 import org.telegram.expensesbot.keyboards.CategoriesControlKeyboard;
 import org.telegram.expensesbot.keyboards.ExpensesReportKeyboard;
@@ -42,7 +43,9 @@ public class Bot extends TelegramLongPollingBot {
     @Autowired
     private MainKeyboardController mainKeyboard;
     @Autowired
-    private ReportController reportController;
+    private MessageReportController messageReportController;
+    @Autowired
+    private FileReportController fileReportController;
 
     @Override
     public void onUpdateReceived(Update update) {
@@ -153,7 +156,7 @@ public class Bot extends TelegramLongPollingBot {
         String buttonData = update.getCallbackQuery().getData();
 
         if (buttonData.equals("allTime") || buttonData.equals("sixMonth")
-            || buttonData.equals("month") || buttonData.equals("sevenDays")) {
+            || buttonData.equals("thirtyDays") || buttonData.equals("sevenDays")) {
             changeToReportFormatKeyboard(update);
             chatIdTimeInterval.put(chatId, buttonData);
         }
@@ -167,7 +170,8 @@ public class Bot extends TelegramLongPollingBot {
 
     private void handleReportFormatKeyboard(Update update) {
         String buttonData = update.getCallbackQuery().getData();
-        reportController.setChatId(chatId);
+        messageReportController.setChatId(chatId);
+        fileReportController.setChatId(chatId);
 
         if (buttonData.equals("messageFormat") && !StringUtils.isBlank(chatIdTimeInterval.get(chatId))) {
             String reportMessage = createReportMessage();
@@ -175,7 +179,7 @@ public class Bot extends TelegramLongPollingBot {
             sendTextMessageIfCallback(reportMessage, update);
             chatIdPreviousMessage.put(chatId, "Сообщение");
         } else if (buttonData.equals("fileFormat")) {
-            File document = reportController.createAllTimeFileReport(category);
+            File document = createReportFile();
             String text = "Файл с отчётом";
             sendDocument(text, update, document);
             chatIdPreviousMessage.put(chatId, "Файл");
@@ -191,15 +195,30 @@ public class Bot extends TelegramLongPollingBot {
     private String createReportMessage() {
         switch (chatIdTimeInterval.get(chatId)) {
             case "allTime":
-                return reportController.createAllTimeReportMessage(category);
+                return messageReportController.createAllTimeReportMessage(category);
             case "sixMonth":
-                return reportController.createHalfYearReportMessage(category);
-            case "month":
-                return reportController.createMonthReportMessage(category);
+                return messageReportController.createSixMonthReportMessage(category);
+            case "thirtyDays":
+                return messageReportController.createThirtyDaysReportMessage(category);
             case "sevenDays":
-                return reportController.createSevenDaysReportMessage(category);
+                return messageReportController.createSevenDaysReportMessage(category);
             default:
                 return "error";
+        }
+    }
+
+    private File createReportFile() {
+        switch (chatIdTimeInterval.get(chatId)) {
+            case "allTime":
+                return fileReportController.createAllTimeFileReport(category);
+            case "sixMonth":
+                return fileReportController.createSixMonthFileReport(category);
+            case "thirtyDays":
+                return fileReportController.createThirtyDaysFileReport(category);
+            case "sevenDays":
+                return fileReportController.createSevenDaysFileReport(category);
+            default:
+                return null;
         }
     }
 

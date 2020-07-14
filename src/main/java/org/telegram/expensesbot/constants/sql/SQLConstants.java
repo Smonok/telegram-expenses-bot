@@ -7,7 +7,7 @@ public class SQLConstants {
 
     public static final String SIX_MONTHS_DATE_SUBTRAHEND = "6 month";
 
-    public static final String ONE_MONTH_DATE_SUBTRAHEND = "1 month";
+    public static final String THIRTY_DAYS_DATE_SUBTRAHEND = "30 days";
 
     public static final String SEVEN_DAYS_DATE_SUBTRAHEND = "7 days";
 }

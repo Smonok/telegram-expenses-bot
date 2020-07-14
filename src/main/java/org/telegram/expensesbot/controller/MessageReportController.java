@@ -1,13 +1,8 @@
 package org.telegram.expensesbot.controller;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.StringJoiner;
@@ -22,11 +17,10 @@ import org.telegram.expensesbot.service.SubexpensesService;
 import org.telegram.expensesbot.util.DateUtil;
 
 @Component
-public class ReportController {
-    private static final String REPORTS_PATH = "src\\main\\java\\org\\telegram\\expensesbot\\resources\\reports";
+public class MessageReportController {
     private static final String BOLD_NAME_NUMBER_HEADER = "\n<b>===[ %s - %d ]===</b>";
     private static final String BOLD_GENERAL_SUM = "\n<b>===[ Общая сумма - %d ]===</b>";
-    private static final Logger log = LoggerFactory.getLogger(ReportController.class);
+    private static final Logger log = LoggerFactory.getLogger(MessageReportController.class);
     private StringJoiner report;
     private String category;
     private long chatId = 0;
@@ -44,7 +38,7 @@ public class ReportController {
         return report.toString();
     }
 
-    public String createHalfYearReportMessage(String category) {
+    public String createSixMonthReportMessage(String category) {
         report = new StringJoiner(System.lineSeparator());
 
         report.add("<b>❯ Отчёт за последние 6 месяцев ❮</b>");
@@ -54,12 +48,12 @@ public class ReportController {
         return report.toString();
     }
 
-    public String createMonthReportMessage(String category) {
+    public String createThirtyDaysReportMessage(String category) {
         report = new StringJoiner(System.lineSeparator());
 
         report.add("<b>❯ Отчёт за последние 30 дней ❮</b>");
         if (!StringUtils.isBlank(category)) {
-            createReportByCategory(SQLConstants.ONE_MONTH_DATE_SUBTRAHEND, category);
+            createReportByCategory(SQLConstants.THIRTY_DAYS_DATE_SUBTRAHEND, category);
         }
         return report.toString();
     }
@@ -91,7 +85,7 @@ public class ReportController {
 
         for (Subexpenses expenses : subexpenses) {
             addCategoriesHeaderToReport(categoriesBuffer, expenses, subtrahend);
-            addToMonthYearBuffer(expenses, monthsYearBuffer);
+            DateUtil.addToMonthYearBuffer(expenses, monthsYearBuffer);
             report.add(expenses.toString());
         }
 
@@ -117,20 +111,6 @@ public class ReportController {
 
             categoriesBuffer.add(subcategory);
             report.add(categoryHeader);
-        }
-    }
-
-    private void addToMonthYearBuffer(Subexpenses subexpenses, List<Date> monthYearBuffer) {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("MM.yyyy");
-        try {
-            Date monthAndYear = dateFormat.parse(subexpenses.getDate().substring(3));
-
-            if (!monthYearBuffer.contains(monthAndYear)) {
-                monthYearBuffer.add(monthAndYear);
-            }
-        } catch (ParseException e) {
-            log.error("Cannot parse date: {} with date format pattern: {}",
-                subexpenses.getDate().substring(3), dateFormat.toPattern());
         }
     }
 
@@ -160,36 +140,6 @@ public class ReportController {
             findSumAfterSubtractionByMonthYear(chatId, category, subtrahend, monthNumber, year);
 
         return String.format(BOLD_NAME_NUMBER_HEADER, monthYearName, summary);
-    }
-
-    public File createAllTimeFileReport(String category) {
-        String directoryPath = String.format("%s\\%d", REPORTS_PATH, chatId);
-        createDirectory(directoryPath);
-
-        String filePath = String.format("%s\\summary_all_time_report.xlsx", directoryPath);
-        File reportFile = new File(filePath);
-
-        StringJoiner content = new StringJoiner(System.lineSeparator());
-
-        try (FileOutputStream output = new FileOutputStream(reportFile)) {
-            if (!reportFile.exists() && reportFile.createNewFile()) {
-                log.info("Successfully created new file : {}", filePath);
-            }
-
-            output.flush();
-        } catch (IOException e) {
-            log.error("Cannot work with file: {}", filePath);
-        }
-
-        return reportFile;
-    }
-
-    private void createDirectory(String directoryPath) {
-        File directory = new File(directoryPath);
-
-        if (!directory.exists() && directory.mkdirs()) {
-            log.info("Successfully created new directory : {}", directoryPath);
-        }
     }
 
     public void setChatId(long chatId) {

@@ -21,7 +21,8 @@ public class SubexpensesQueryConstants {
     public static final String FIND_AFTER_SUBTRACTION_BY_MONTH_YEAR =
         "select * from (\n" + FIND_AFTER_SUBTRACTION_BY_CATEGORY
             + ") n3 where date_part('month', (date)\\:\\:timestamp) = ?4 and\n"
-            + "date_part('year', (date)\\:\\:timestamp) = ?5\n";
+            + "date_part('year', (date)\\:\\:timestamp) = ?5\n"
+            + "order by to_date(date, 'DD.MM.YYYY') desc\n";
 
     public static final String FIND_SUM_BY_MONTH_YEAR = "select sum(subexpenses) from(\n"
         + FIND_AFTER_SUBTRACTION_BY_MONTH_YEAR + ") n4\n";
