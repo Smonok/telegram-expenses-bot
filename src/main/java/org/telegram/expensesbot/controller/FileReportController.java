@@ -24,7 +24,7 @@ import org.telegram.expensesbot.util.CellStylesUtil;
 import org.telegram.expensesbot.util.DateUtil;
 
 @Component
-public class FileReportController {
+public class FileReportController implements DefaultFileReportController {
     private static final String REPORTS_PATH = "src\\main\\java\\org\\telegram\\expensesbot\\resources\\reports";
     private static final String NAME_NUMBER_HEADER = "===[ %s - %d ]===";
     private static final String GENERAL_SUM = "===[ Общая сумма - %d ]===";
@@ -50,7 +50,7 @@ public class FileReportController {
         return reportFile;
     }
 
-    public File createSixMonthFileReport(String category) {
+    public File createSixMonthsFileReport(String category) {
         if (StringUtils.isBlank(category)) {
             throw new IllegalArgumentException(BLANK_CATEGORY_MESSAGE);
         }
@@ -83,6 +83,22 @@ public class FileReportController {
         return reportFile;
     }
 
+    private File createReportFileWithDirectory(String fileName) {
+        String directoryPath = String.format("%s\\%d", REPORTS_PATH, chatId);
+        String filePath = String.format("%s\\%s", directoryPath, fileName);
+        createDirectory(directoryPath);
+
+        return new File(filePath);
+    }
+
+    private void createDirectory(String directoryPath) {
+        File directory = new File(directoryPath);
+
+        if (!directory.exists() && directory.mkdirs()) {
+            log.info("Successfully created new directory : {}", directoryPath);
+        }
+    }
+
     private void createReportByCategory(String subtrahend, String category, File reportFile) {
         List<Date> monthYearBuffer = new ArrayList<>();
         this.category = category.equals("Суммарно") ? SQLConstants.ANY_STRING_SQL_REGEX : category;
@@ -102,6 +118,15 @@ public class FileReportController {
         }
     }
 
+    private XSSFSheet initSheet(XSSFWorkbook workbook) {
+        XSSFSheet workbookSheet = workbook.createSheet(sheetName);
+        workbookSheet.setColumnWidth(0, 4000);
+        workbookSheet.setColumnWidth(1, 8000);
+        workbookSheet.setColumnWidth(2, 4000);
+
+        return workbookSheet;
+    }
+
     private void writeReportTimeHeader() {
         String middleCellText = String.format("❯ Отчёт за %s ❮", sheetName);
         XSSFCell cell = writeToMiddleCell(rowsCounter, middleCellText);
@@ -109,26 +134,14 @@ public class FileReportController {
         CellStylesUtil.changeCellFont(cell, sheet.getWorkbook(), "Courier New");
     }
 
-    private void writeMonthsExpenses(String subtrahend, List<Date> monthYearBuffer) {
-        SimpleDateFormat dateFormat = new SimpleDateFormat("MM.yyyy");
+    private void writeGeneralSumHeader(String subtrahend) {
+        Long summary = subexpensesService
+            .findSumAfterSubtraction(chatId, this.category, subtrahend);
+        String generalSum = String.format(GENERAL_SUM, summary);
 
-        monthYearBuffer.sort(Collections.reverseOrder());
-
-        for (Date monthYear : monthYearBuffer) {
-            final String monthYearFormat = dateFormat.format(monthYear);
-            int monthNumber = Integer.parseInt(StringUtils.substringBefore(monthYearFormat, "."));
-            int year = Integer.parseInt(StringUtils.substringAfter(monthYearFormat, "."));
-            String oneMonthExpenses = createMonthReportHeader(subtrahend, monthNumber, year);
-
-            writeHeader(oneMonthExpenses);
-
-            List<Subexpenses> subexpenses = subexpensesService.
-                findAllAfterSubtractionByMonthYear(chatId, category, subtrahend, monthNumber, year);
-
-            for (Subexpenses expenses : subexpenses) {
-                writeSubexpensesInRow(expenses);
-            }
-        }
+        rowsCounter++;
+        XSSFCell cell = writeToMiddleCell(rowsCounter, generalSum);
+        CellStylesUtil.makeBoldCell(cell, sheet.getWorkbook());
     }
 
     private void writeSubexpenses(String subtrahend, List<Date> monthYearBuffer) {
@@ -156,24 +169,6 @@ public class FileReportController {
         }
     }
 
-    private void writeGeneralSumHeader(String subtrahend) {
-        Long summary = subexpensesService
-            .findSumAfterSubtraction(chatId, this.category, subtrahend);
-        String generalSum = String.format(GENERAL_SUM, summary);
-
-        rowsCounter++;
-        XSSFCell cell = writeToMiddleCell(rowsCounter, generalSum);
-        CellStylesUtil.makeBoldCell(cell, sheet.getWorkbook());
-    }
-
-    private File createReportFileWithDirectory(String fileName) {
-        String directoryPath = String.format("%s\\%d", REPORTS_PATH, chatId);
-        String filePath = String.format("%s\\%s", directoryPath, fileName);
-        createDirectory(directoryPath);
-
-        return new File(filePath);
-    }
-
     private void writeHeader(String categoryHeader) {
         rowsCounter++;
         XSSFCell cell = writeToMiddleCell(rowsCounter, categoryHeader);
@@ -199,6 +194,28 @@ public class FileReportController {
         rowsCounter++;
     }
 
+    private void writeMonthsExpenses(String subtrahend, List<Date> monthYearBuffer) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("MM.yyyy");
+
+        monthYearBuffer.sort(Collections.reverseOrder());
+
+        for (Date monthYear : monthYearBuffer) {
+            final String monthYearFormat = dateFormat.format(monthYear);
+            int monthNumber = Integer.parseInt(StringUtils.substringBefore(monthYearFormat, "."));
+            int year = Integer.parseInt(StringUtils.substringAfter(monthYearFormat, "."));
+            String oneMonthExpenses = createMonthReportHeader(subtrahend, monthNumber, year);
+
+            writeHeader(oneMonthExpenses);
+
+            List<Subexpenses> subexpenses = subexpensesService.
+                findAllAfterSubtractionByMonthYear(chatId, category, subtrahend, monthNumber, year);
+
+            for (Subexpenses expenses : subexpenses) {
+                writeSubexpensesInRow(expenses);
+            }
+        }
+    }
+
     private XSSFCell writeToCell(XSSFRow row, int columnIndex, String text) {
         XSSFCell cell = row.createCell(columnIndex);
 
@@ -219,29 +236,12 @@ public class FileReportController {
         return cell;
     }
 
-    private XSSFSheet initSheet(XSSFWorkbook workbook) {
-        XSSFSheet workbookSheet = workbook.createSheet(sheetName);
-        workbookSheet.setColumnWidth(0, 4000);
-        workbookSheet.setColumnWidth(1, 8000);
-        workbookSheet.setColumnWidth(2, 4000);
-
-        return workbookSheet;
-    }
-
     private String createMonthReportHeader(String subtrahend, int monthNumber, int year) {
         String monthYearName = String.format("%d, %s", year, DateUtil.getMonthName(monthNumber));
         Long summary = subexpensesService.
             findSumAfterSubtractionByMonthYear(chatId, category, subtrahend, monthNumber, year);
 
         return String.format(NAME_NUMBER_HEADER, monthYearName, summary);
-    }
-
-    private void createDirectory(String directoryPath) {
-        File directory = new File(directoryPath);
-
-        if (!directory.exists() && directory.mkdirs()) {
-            log.info("Successfully created new directory : {}", directoryPath);
-        }
     }
 
     public void setChatId(long chatId) {

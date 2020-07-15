@@ -5,9 +5,9 @@ import java.util.List;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
-public class KeyboardController {
+public class KeyboardController implements DefaultKeyboardController {
     private final List<KeyboardRow> keyboard;
-    private static final int rowButtonsNumber = 2;
+    private static final int ROW_BUTTONS_NUMBER = 2;
     private int headerRowsNumber = 2;
 
     public KeyboardController(List<KeyboardRow> keyboard, int headerRowsNumber) {
@@ -19,6 +19,7 @@ public class KeyboardController {
         this.keyboard = keyboard;
     }
 
+    @Override
     public void addButton(String name) {
         if (!addIfOneButtonRow(name)) {
             addToNewRow(name);
@@ -28,19 +29,20 @@ public class KeyboardController {
     private boolean addIfOneButtonRow(String name) {
         for (KeyboardRow row : keyboard) {
             boolean isSecondRow = row.equals(keyboard.get(headerRowsNumber - 1));
-            if (row.size() < rowButtonsNumber && !isSecondRow) {
+            if (row.size() < ROW_BUTTONS_NUMBER && !isSecondRow) {
                 return row.add(name);
             }
         }
         return false;
     }
 
-    private boolean addToNewRow(String name) {
+    private void addToNewRow(String name) {
         KeyboardRow keyboardRow = new KeyboardRow();
         keyboardRow.add(name);
-        return keyboard.add(keyboardRow);
+        keyboard.add(keyboardRow);
     }
 
+    @Override
     public void deleteButton(String name) {
         int nextRowIndex = computeNextRowIndex(name);
         int nextColumnIndex = computeNextColumnIndex(name);
@@ -87,12 +89,12 @@ public class KeyboardController {
         boolean isFound = false;
 
         for (KeyboardRow row : keyboard) {
-            for(KeyboardButton button: row){
-                if(button.getText().equals(name)) {
+            for (KeyboardButton button : row) {
+                if (button.getText().equals(name)) {
                     isFound = true;
                     continue;
                 }
-                if(isFound){
+                if (isFound) {
                     count++;
                 }
             }
@@ -103,7 +105,7 @@ public class KeyboardController {
 
     private void changePreviousButtonText(int row, int column) {
         if (column == 0) {
-            keyboard.get(row - 1).get(rowButtonsNumber - 1).setText(keyboard.get(row).get(column).getText());
+            keyboard.get(row - 1).get(ROW_BUTTONS_NUMBER - 1).setText(keyboard.get(row).get(column).getText());
         } else {
             keyboard.get(row).get(column - 1).setText(keyboard.get(row).get(column).getText());
         }

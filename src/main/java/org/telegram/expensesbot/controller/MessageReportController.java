@@ -17,7 +17,7 @@ import org.telegram.expensesbot.service.SubexpensesService;
 import org.telegram.expensesbot.util.DateUtil;
 
 @Component
-public class MessageReportController {
+public class MessageReportController implements DefaultMessageReportController {
     private static final String BOLD_NAME_NUMBER_HEADER = "\n<b>===[ %s - %d ]===</b>";
     private static final String BOLD_GENERAL_SUM = "\n<b>===[ Общая сумма - %d ]===</b>";
     private static final Logger log = LoggerFactory.getLogger(MessageReportController.class);
@@ -28,43 +28,59 @@ public class MessageReportController {
     @Autowired
     private SubexpensesService subexpensesService;
 
+    @Override
     public String createAllTimeReportMessage(String category) {
         report = new StringJoiner(System.lineSeparator());
+        log.info("Creating all time report message for category: {}, chat: {}", category, chatId);
 
         report.add("<b>❯ Отчёт за всё время ❮</b>");
         if (!StringUtils.isBlank(category)) {
             createReportByCategory(SQLConstants.ALL_TIME_DATE_SUBTRAHEND, category);
+            log.info("Successfully created all time report message for category: {}, chat: {}", category, chatId);
         }
+
         return report.toString();
     }
 
-    public String createSixMonthReportMessage(String category) {
+    @Override
+    public String createSixMonthsReportMessage(String category) {
         report = new StringJoiner(System.lineSeparator());
+        log.info("Creating six months report message for category: {}, chat: {}", category, chatId);
 
         report.add("<b>❯ Отчёт за последние 6 месяцев ❮</b>");
         if (!StringUtils.isBlank(category)) {
             createReportByCategory(SQLConstants.SIX_MONTHS_DATE_SUBTRAHEND, category);
+            log.info("Successfully created six months report message for category: {}, chat: {}", category, chatId);
         }
+
         return report.toString();
     }
 
+    @Override
     public String createThirtyDaysReportMessage(String category) {
         report = new StringJoiner(System.lineSeparator());
+        log.info("Creating thirty days report message for category: {}, chat: {}", category, chatId);
 
         report.add("<b>❯ Отчёт за последние 30 дней ❮</b>");
         if (!StringUtils.isBlank(category)) {
             createReportByCategory(SQLConstants.THIRTY_DAYS_DATE_SUBTRAHEND, category);
+            log.info("Successfully created thirty days report message for category: {}, chat: {}", category, chatId);
         }
+
         return report.toString();
     }
 
+    @Override
     public String createSevenDaysReportMessage(String category) {
         report = new StringJoiner(System.lineSeparator());
+        log.info("Creating seven days report message for category: {}, chat: {}", category, chatId);
 
         report.add("<b>❯ Отчёт за последние 7 дней ❮</b>");
         if (!StringUtils.isBlank(category)) {
             createReportByCategory(SQLConstants.SEVEN_DAYS_DATE_SUBTRAHEND, category);
+            log.info("Successfully created seven days report message for category: {}, chat: {}", category, chatId);
         }
+
         return report.toString();
     }
 

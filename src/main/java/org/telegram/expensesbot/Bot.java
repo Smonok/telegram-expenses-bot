@@ -8,6 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import org.telegram.expensesbot.constants.BotCommands;
+import org.telegram.expensesbot.constants.callbackdata.CategoriesControlData;
+import org.telegram.expensesbot.constants.callbackdata.ExpensesReportData;
 import org.telegram.expensesbot.controller.FileReportController;
 import org.telegram.expensesbot.controller.MainKeyboardController;
 import org.telegram.expensesbot.controller.MessageReportController;
@@ -27,9 +30,6 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 @Component
 public class Bot extends TelegramLongPollingBot {
-    private static final String CATEGORIES_CONTROL = "'Управление категориями'";
-    private static final String NEW_CATEGORY = "Новая категория";
-    private static final String START = "/start";
     private static final Logger log = LoggerFactory.getLogger(Bot.class);
     private final ExpensesReportKeyboard expensesReportKeyboard = new ExpensesReportKeyboard();
     private final CategoriesControlKeyboard categoriesControlKeyboard = new CategoriesControlKeyboard();
@@ -76,13 +76,13 @@ public class Bot extends TelegramLongPollingBot {
     }
 
     private void initStart() {
-        if (messageText.equals(START)) {
+        if (messageText.equals(BotCommands.START_COMMAND)) {
             sendReplyKeyboardMessage("Начинаем работать", mainKeyboard.removeUserExpenses());
         }
     }
 
     private void handleCategoriesControlButton() {
-        if (messageText.equals(CATEGORIES_CONTROL)) {
+        if (messageText.equals(BotCommands.CATEGORIES_CONTROL_BUTTON)) {
             sendInlineKeyboardMessage("Выберите действие",
                 categoriesControlKeyboard.getKeyboard());
         }
@@ -90,22 +90,18 @@ public class Bot extends TelegramLongPollingBot {
 
     private void addButtonIfNewCategoryPrevious() {
         if (chatIdPreviousMessage.get(chatId) != null &&
-            chatIdPreviousMessage.get(chatId).equals(NEW_CATEGORY)) {
-            if (messageText.charAt(0) != '\'') {
-                if (mainKeyboard.isCategoryExists(messageText)) {
-                    sendTextMessage("Извините, категория с таким\nназванием уже существует");
-                } else {
-                    sendReplyKeyboardMessage("Добавление успешно", mainKeyboard.addCategory(messageText));
-                }
+            chatIdPreviousMessage.get(chatId).equals(CategoriesControlData.NEW_CATEGORY)) {
+            if (mainKeyboard.isSuitableForAdding(messageText)) {
+                sendReplyKeyboardMessage("Добавление успешно", mainKeyboard.addCategory(messageText));
             } else {
-                sendReplyKeyboardMessage("Недопустимый символ -> '", mainKeyboard.fillEmptyKeyboard());
+                sendTextMessage("Недопустимое имя категории");
             }
         }
     }
 
     private void deleteButton() {
         if (chatIdPreviousMessage.get(chatId) != null &&
-            chatIdPreviousMessage.get(chatId).equals("Удалить категорию") &&
+            chatIdPreviousMessage.get(chatId).equals(CategoriesControlData.DELETE_CATEGORY) &&
             mainKeyboard.isCategoryButton(messageText)) {
             sendReplyKeyboardMessage("Удаление успешно", mainKeyboard.deleteCategory(messageText));
         }
@@ -121,15 +117,41 @@ public class Bot extends TelegramLongPollingBot {
     }
 
     private void handleExpensesLines() {
-        if (ExpensesParserUtil.isExpensesLines(messageText) &&
-            chatIdPreviousMessage.get(chatId) != null &&
-            !chatIdPreviousMessage.get(chatId).equals(NEW_CATEGORY)) {
-            sendReplyKeyboardMessage("Изменено", mainKeyboard.changeButtonExpenses(category, messageText));
+        if (!StringUtils.isBlank(chatIdPreviousMessage.get(chatId)) &&
+            !chatIdPreviousMessage.get(chatId).equals(CategoriesControlData.NEW_CATEGORY) &&
+            !chatIdPreviousMessage.get(chatId).equals("Удалить категорию")) {
+            if (ExpensesParserUtil.isExpensesLines(messageText)) {
+                if (ExpensesParserUtil.isTooBigExpenses(messageText)) {
+                    sendTextMessage("Расходы больше, чем 999999999\nне были добавлены");
+                }
+                sendReplyKeyboardMessage("Изменено", mainKeyboard.changeButtonExpenses(category, messageText));
+            } else {
+                sendErrorExpensesLinesMessage();
+            }
+        }
+    }
+
+    private void sendErrorExpensesLinesMessage() {
+        if (!StringUtils.isBlank(chatIdPreviousMessage.get(chatId)) &&
+            !chatIdPreviousMessage.get(chatId).equals(CategoriesControlData.NEW_CATEGORY) &&
+            !mainKeyboard.isKeyboardButton(messageText)) {
+            String errorMessage = "";
+            if (ExpensesParserUtil.countSeparators(messageText) == 0) {
+                errorMessage = "Отсутствует разделитель: '-'";
+            } else if (ExpensesParserUtil.isExpensesNonNaturalNumber(messageText)) {
+                errorMessage = "Недопустимы значения расходов, меньше чем 1";
+            } else if (ExpensesParserUtil.countSeparators(messageText) > 1) {
+                errorMessage = "Недопустимо больше одного разделителя";
+            }
+
+            sendTextMessage("Неверный формат\n" + errorMessage);
         }
     }
 
     private void handleSummaryButton() {
-        if (mainKeyboard.isSummaryButton(messageText)) {
+        if (!StringUtils.isBlank(chatIdPreviousMessage.get(chatId)) &&
+            !chatIdPreviousMessage.get(chatId).equals(CategoriesControlData.NEW_CATEGORY) &&
+            mainKeyboard.isSummaryButton(messageText)) {
             category = "Суммарно";
             sendInlineKeyboardMessage("Выберите период времени, за который\n" +
                     "вы хотите получить отчёт по всем категориям",
@@ -140,23 +162,28 @@ public class Bot extends TelegramLongPollingBot {
     private void handleCategoriesControlKeyboard(Update update) {
         String buttonData = update.getCallbackQuery().getData();
 
-        if (buttonData.equals("newCategory")) {
-            sendTextMessageIfCallback("Пришлите имя категории", update);
-            chatIdPreviousMessage.put(chatId, NEW_CATEGORY);
-        } else if (buttonData.equals("deleteCategory")) {
-            sendTextMessageIfCallback("Выберите категорию для удаления", update);
-            chatIdPreviousMessage.put(chatId, "Удалить категорию");
-        } else if (buttonData.equals("reset")) {
-            sendKeyboardMessageIfCallback("Счета обнулены\nПоздравляем с новым периодом в жизни!",
-                update, mainKeyboard.resetExpenses());
+        switch (buttonData) {
+            case CategoriesControlData.NEW_CATEGORY:
+                sendTextMessageIfCallback("Пришлите имя категории", update);
+                chatIdPreviousMessage.put(chatId, buttonData);
+                break;
+            case CategoriesControlData.DELETE_CATEGORY:
+                sendTextMessageIfCallback("Выберите категорию для удаления", update);
+                chatIdPreviousMessage.put(chatId, buttonData);
+                break;
+            case CategoriesControlData.RESET_BILLS:
+                sendKeyboardMessageIfCallback("Счета обнулены\nПоздравляем с новым периодом в жизни!",
+                    update, mainKeyboard.resetExpenses());
+                chatIdPreviousMessage.put(chatId, buttonData);
+                break;
         }
     }
 
     private void handleReportTimeKeyboard(Update update) {
         String buttonData = update.getCallbackQuery().getData();
 
-        if (buttonData.equals("allTime") || buttonData.equals("sixMonth")
-            || buttonData.equals("thirtyDays") || buttonData.equals("sevenDays")) {
+        if (buttonData.equals(ExpensesReportData.ALL_TIME) || buttonData.equals(ExpensesReportData.SIX_MONTHS)
+            || buttonData.equals(ExpensesReportData.THIRTY_DAYS) || buttonData.equals(ExpensesReportData.SEVEN_DAYS)) {
             changeToReportFormatKeyboard(update);
             chatIdTimeInterval.put(chatId, buttonData);
         }
@@ -173,34 +200,34 @@ public class Bot extends TelegramLongPollingBot {
         messageReportController.setChatId(chatId);
         fileReportController.setChatId(chatId);
 
-        if (buttonData.equals("messageFormat") && !StringUtils.isBlank(chatIdTimeInterval.get(chatId))) {
+        if (buttonData.equals(ExpensesReportData.MESSAGE_FORMAT) &&
+            !StringUtils.isBlank(chatIdTimeInterval.get(chatId))) {
             String reportMessage = createReportMessage();
 
             sendTextMessageIfCallback(reportMessage, update);
-            chatIdPreviousMessage.put(chatId, "Сообщение");
-        } else if (buttonData.equals("fileFormat")) {
+        } else if (buttonData.equals(ExpensesReportData.FILE_FORMAT)) {
             File document = createReportFile();
             String text = "Файл с отчётом";
+
             sendDocument(text, update, document);
-            chatIdPreviousMessage.put(chatId, "Файл");
         } else if (buttonData.equals("back")) {
             String text = "Выберите период времени, за который\n" +
                 "вы хотите получить отчёт по всем категориям";
             List<List<InlineKeyboardButton>> keyboard = expensesReportKeyboard.createTimeIntervalsKeyboard();
+
             changeInlineKeyboardMessage(update, keyboard, text);
-            chatIdPreviousMessage.put(chatId, "Назад");
         }
     }
 
     private String createReportMessage() {
         switch (chatIdTimeInterval.get(chatId)) {
-            case "allTime":
+            case ExpensesReportData.ALL_TIME:
                 return messageReportController.createAllTimeReportMessage(category);
-            case "sixMonth":
-                return messageReportController.createSixMonthReportMessage(category);
-            case "thirtyDays":
+            case ExpensesReportData.SIX_MONTHS:
+                return messageReportController.createSixMonthsReportMessage(category);
+            case ExpensesReportData.THIRTY_DAYS:
                 return messageReportController.createThirtyDaysReportMessage(category);
-            case "sevenDays":
+            case ExpensesReportData.SEVEN_DAYS:
                 return messageReportController.createSevenDaysReportMessage(category);
             default:
                 return "error";
@@ -209,13 +236,13 @@ public class Bot extends TelegramLongPollingBot {
 
     private File createReportFile() {
         switch (chatIdTimeInterval.get(chatId)) {
-            case "allTime":
+            case ExpensesReportData.ALL_TIME:
                 return fileReportController.createAllTimeFileReport(category);
-            case "sixMonth":
-                return fileReportController.createSixMonthFileReport(category);
-            case "thirtyDays":
+            case ExpensesReportData.SIX_MONTHS:
+                return fileReportController.createSixMonthsFileReport(category);
+            case ExpensesReportData.THIRTY_DAYS:
                 return fileReportController.createThirtyDaysFileReport(category);
-            case "sevenDays":
+            case ExpensesReportData.SEVEN_DAYS:
                 return fileReportController.createSevenDaysFileReport(category);
             default:
                 return null;

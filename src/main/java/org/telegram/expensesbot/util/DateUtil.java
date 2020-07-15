@@ -16,6 +16,10 @@ public class DateUtil {
     private static final Logger log = LoggerFactory.getLogger(DateUtil.class);
 
     public static String getMonthName(int monthNumber) {
+        if (monthNumber < 1 || monthNumber > 12) {
+            throw new IllegalArgumentException("Illegal month number");
+        }
+
         Month month = Month.of(monthNumber);
         Locale locale = Locale.forLanguageTag("ru");
         String monthName = month.getDisplayName(TextStyle.FULL_STANDALONE, locale);

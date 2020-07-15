@@ -9,6 +9,7 @@ import java.util.List;
 
 import java.util.Map;
 import java.util.Optional;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,7 +43,7 @@ public class MainKeyboardController {
 
         if (cache.containsKey(chatId)) {
             log.info("add ->{}<- to cache for chat: {}", name, chatId);
-            return addButtonToCacheKeyboard(name, beginExpenses);
+            return addButtonToCacheKeyboard(name);
         }
 
         log.info("fillEmptyKeyboard() in addCategory: ->{}<- for chat: {}", name, chatId);
@@ -50,9 +51,9 @@ public class MainKeyboardController {
         return fillEmptyKeyboard();
     }
 
-    private List<KeyboardRow> addButtonToCacheKeyboard(String name, final int beginExpenses) {
+    private List<KeyboardRow> addButtonToCacheKeyboard(String name) {
         KeyboardController keyboardController = new KeyboardController(cache.get(chatId));
-        String buttonName = combineButtonName(name, beginExpenses);
+        String buttonName = combineButtonName(name, 0);
         keyboardController.addButton(buttonName);
 
         return cache.get(chatId);
@@ -85,33 +86,31 @@ public class MainKeyboardController {
     }
 
     public List<KeyboardRow> resetExpenses() {
-        final int resultExpenses = 0;
-
-        resetDBExpenses(resultExpenses);
+        resetDBExpenses();
 
         if (cache.containsKey(chatId)) {
             log.info("reset cache expenses for chat: {}", chatId);
 
-            resetCacheExpenses(resultExpenses);
+            resetCacheExpenses();
             return cache.get(chatId);
         }
 
         return fillEmptyKeyboard();
     }
 
-    private void resetDBExpenses(final int resultExpenses) {
+    private void resetDBExpenses() {
         log.info("reset DB expenses for chat: {}", chatId);
-        buttonService.updateAllExpensesByChatId(resultExpenses, chatId);
+        buttonService.updateAllExpensesByChatId(0, chatId);
     }
 
-    private void resetCacheExpenses(final int resultExpenses) {
+    private void resetCacheExpenses() {
         List<KeyboardRow> cacheKeyboard = cache.get(chatId);
         cacheKeyboard.get(1).get(0).setText("'Суммарно - 0'");
 
         for (int i = HEADER_ROWS_NUMBER; i < cacheKeyboard.size(); i++) {
             cacheKeyboard.get(i).forEach(button -> {
                 String category = ExpensesParserUtil.parseCategoryName(button.getText());
-                String buttonName = combineButtonName(category, resultExpenses);
+                String buttonName = combineButtonName(category, 0);
 
                 button.setText(buttonName);
             });
@@ -139,12 +138,12 @@ public class MainKeyboardController {
         subexpenses.setCategory(category);
 
         buttonService.updateCategoryButtonExpenses(resultExpenses, category, chatId);
-        saveReport(category, expensesMessage);
+        saveSubexpenses(category, expensesMessage);
 
         return fillEmptyKeyboard();
     }
 
-    private void saveReport(String category, String expensesMessage) {
+    private void saveSubexpenses(String category, String expensesMessage) {
         String[] expensesLines = ExpensesParserUtil.splitByNewLine(expensesMessage);
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd.MM.yyy");
         String date = simpleDateFormat.format(new Date());
@@ -153,7 +152,9 @@ public class MainKeyboardController {
             int subexpenses = ExpensesParserUtil.parseExpenses(line);
             String reasons = ExpensesParserUtil.parseReasons(line);
 
-            subexpensesService.add(new Subexpenses(chatId, category, subexpenses, reasons, date));
+            if (subexpenses > 0) {
+                subexpensesService.add(new Subexpenses(chatId, category, subexpenses, reasons, date));
+            }
         });
     }
 
@@ -222,6 +223,20 @@ public class MainKeyboardController {
         });
     }
 
+    public boolean isSuitableForAdding(String categoryName) {
+        if (StringUtils.isBlank(categoryName)) {
+            return false;
+        }
+        categoryName = categoryName.trim();
+
+        if (categoryName.charAt(0) == '\'' || categoryName.equals("Управление категориями") ||
+            categoryName.equals("Помощь") || categoryName.equals("Суммарно")) {
+            return false;
+        }
+
+        return !isKeyboardButton(categoryName) && !isCategoryButton(categoryName) && !isSummaryButton(categoryName);
+    }
+
     public boolean isSummaryButton(String message) {
         if (message.charAt(0) == '\'') {
             String buttonName = ExpensesParserUtil.parseCategoryName(message);
@@ -230,16 +245,30 @@ public class MainKeyboardController {
         return false;
     }
 
+    public boolean isKeyboardButton(String buttonName) {
+        if (buttonName.equals("'Управление категориями'") ||
+            buttonName.equals("'Помощь'") ||
+            buttonName.equals("'Суммарно'")) {
+            return true;
+        }
+
+        return isCategoryButton(buttonName);
+    }
+
     public boolean isCategoryButton(String buttonName) {
         if (buttonName.charAt(0) == '\'') {
             String category = ExpensesParserUtil.parseCategoryName(buttonName);
 
-            return buttonService.existsCategoryButtonByCategoryAndChatId(category, chatId);
+            return isCategoryExists(category);
         }
         return false;
     }
 
     public boolean isCategoryExists(String category) {
+        if (StringUtils.isBlank(category)) {
+            return false;
+        }
+
         return buttonService.existsCategoryButtonByCategoryAndChatId(category, chatId);
     }
 

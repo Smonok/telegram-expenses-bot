@@ -1,5 +1,6 @@
 package org.telegram.expensesbot.model;
 
+import java.util.Objects;
 import javax.persistence.*;
 
 @Entity
@@ -49,6 +50,26 @@ public class CategoryButton {
 
     public void setExpenses(int expenses) {
         this.expenses = expenses;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        CategoryButton categoryButton = (CategoryButton) o;
+        return id == categoryButton.id &&
+            chatId == categoryButton.chatId &&
+            expenses == categoryButton.expenses &&
+            Objects.equals(category, categoryButton.category);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, chatId, category, expenses);
     }
 
     public CategoryButton() {

@@ -2,6 +2,7 @@ package org.telegram.expensesbot.keyboards;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.telegram.expensesbot.constants.callbackdata.ExpensesReportData;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 public class ExpensesReportKeyboard {
@@ -11,10 +12,10 @@ public class ExpensesReportKeyboard {
         List<InlineKeyboardButton> firstRow = new ArrayList<>();
         List<InlineKeyboardButton> secondRow = new ArrayList<>();
 
-        firstRow.add(addButton("Всё время", "allTime"));
-        firstRow.add(addButton("6 месяцев", "sixMonth"));
-        secondRow.add(addButton("30 дней", "thirtyDays"));
-        secondRow.add(addButton("7 дней", "sevenDays"));
+        firstRow.add(addButton("Всё время", ExpensesReportData.ALL_TIME));
+        firstRow.add(addButton("6 месяцев", ExpensesReportData.SIX_MONTHS));
+        secondRow.add(addButton("30 дней", ExpensesReportData.THIRTY_DAYS));
+        secondRow.add(addButton("7 дней", ExpensesReportData.SEVEN_DAYS));
 
         keyboard.add(firstRow);
         keyboard.add(secondRow);
@@ -27,9 +28,9 @@ public class ExpensesReportKeyboard {
         List<InlineKeyboardButton> firstRow = new ArrayList<>();
         List<InlineKeyboardButton> secondRow = new ArrayList<>();
 
-        firstRow.add(addButton("Сообщение", "messageFormat"));
-        firstRow.add(addButton("Файл", "fileFormat"));
-        secondRow.add(addButton("Назад", "back"));
+        firstRow.add(addButton("Сообщение", ExpensesReportData.MESSAGE_FORMAT));
+        firstRow.add(addButton("Файл", ExpensesReportData.FILE_FORMAT));
+        secondRow.add(addButton("Назад", ExpensesReportData.BACK));
 
         keyboard.add(firstRow);
         keyboard.add(secondRow);

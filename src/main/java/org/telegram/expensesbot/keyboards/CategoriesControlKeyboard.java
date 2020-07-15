@@ -2,6 +2,7 @@ package org.telegram.expensesbot.keyboards;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.telegram.expensesbot.constants.callbackdata.CategoriesControlData;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 
 public class CategoriesControlKeyboard {
@@ -12,9 +13,9 @@ public class CategoriesControlKeyboard {
         List<InlineKeyboardButton> secondRow = new ArrayList<>();
         List<InlineKeyboardButton> thirdRow = new ArrayList<>();
 
-        firstRow.add(addButton("Новая категория", "newCategory"));
-        secondRow.add(addButton("Удалить категорию", "deleteCategory"));
-        thirdRow.add(addButton("Обнулить счета", "reset"));
+        firstRow.add(addButton("Новая категория", CategoriesControlData.NEW_CATEGORY));
+        secondRow.add(addButton("Удалить категорию", CategoriesControlData.DELETE_CATEGORY));
+        thirdRow.add(addButton("Обнулить счета", CategoriesControlData.RESET_BILLS));
 
         keyboard.add(firstRow);
         keyboard.add(secondRow);

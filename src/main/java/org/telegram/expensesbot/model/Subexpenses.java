@@ -1,5 +1,6 @@
 package org.telegram.expensesbot.model;
 
+import java.util.Objects;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -81,6 +82,28 @@ public class Subexpenses {
     @Override
     public String toString() {
         return String.format("%d - <i>%s</i>, %s", subexpenses, reasons, date);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Subexpenses that = (Subexpenses) o;
+        return id == that.id &&
+            chatId == that.chatId &&
+            subexpenses == that.subexpenses &&
+            Objects.equals(category, that.category) &&
+            Objects.equals(reasons, that.reasons) &&
+            Objects.equals(date, that.date);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, chatId, category, subexpenses, reasons, date);
     }
 
     public Subexpenses() {
