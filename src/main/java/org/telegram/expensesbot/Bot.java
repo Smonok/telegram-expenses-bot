@@ -15,6 +15,7 @@ import org.telegram.expensesbot.controller.FileReportController;
 import org.telegram.expensesbot.controller.MainKeyboardController;
 import org.telegram.expensesbot.controller.MessageReportController;
 import org.telegram.expensesbot.factory.MessageFactory;
+import org.telegram.expensesbot.factory.PropertiesFactory;
 import org.telegram.expensesbot.keyboards.CategoriesControlKeyboard;
 import org.telegram.expensesbot.keyboards.ExpensesReportKeyboard;
 import org.telegram.expensesbot.util.ExpensesParserUtil;
@@ -134,6 +135,7 @@ public class Bot extends TelegramLongPollingBot {
     private void sendErrorExpensesLinesMessage() {
         if (!StringUtils.isBlank(chatIdPreviousMessage.get(chatId)) &&
             !chatIdPreviousMessage.get(chatId).equals(CategoriesControlData.NEW_CATEGORY) &&
+            !chatIdPreviousMessage.get(chatId).equals(CategoriesControlData.DELETE_CATEGORY) &&
             !mainKeyboard.isKeyboardButton(messageText)) {
             String errorMessage = "";
             if (ExpensesParserUtil.countSeparators(messageText) == 0) {
@@ -335,11 +337,11 @@ public class Bot extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        return "e_x_p_enses_bot";
+        return PropertiesFactory.getProperty("config.properties", "username");
     }
 
     @Override
     public String getBotToken() {
-        return "972039490:AAFf5aJUDInYnlVnlHQEwsMzSYTXr8sMZhY";
+        return PropertiesFactory.getProperty("config.properties", "token");
     }
 }
