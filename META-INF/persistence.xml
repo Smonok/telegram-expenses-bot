@@ -10,9 +10,6 @@
 
     <properties>
       <property name="javax.persistence.jdbc.driver" value="org.postgresql.Driver" /> <!-- DB Driver -->
-      <property name="javax.persistence.jdbc.url" value="jdbc:postgresql://localhost/expensesbot" /> <!-- BD Mane -->
-      <property name="javax.persistence.jdbc.user" value="postgres" /> <!-- DB User -->
-      <property name="javax.persistence.jdbc.password" value="32147" /> <!-- DB Password -->
 
       <property name="hibernate.hbm2ddl.auto" value="update" /> <!-- create / create-drop / update -->
 
