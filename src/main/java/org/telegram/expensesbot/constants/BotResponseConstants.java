@@ -2,7 +2,7 @@ package org.telegram.expensesbot.constants;
 
 public class BotResponseConstants {
 
-    public static final String HELP_INFO = "<b>===[ Как пользоваться ботом ]===</b>\n"
+    public static final String HELP_INFO = "<b>[ Как пользоваться ботом ]</b>\n"
         + "<code>/start</code> - начало работы с ботом. \n"
         + "При повторном вводе все сохранённые данные удалятся.\n"
         + "\n"
@@ -54,6 +54,8 @@ public class BotResponseConstants {
     public static final String REPORT_FILE = "Файл с отчётом";
 
     public static final String SEND_CATEGORY_NAME = "Пришлите имя категории";
+
+    public static final String CREATING_FILE = "Создаётся файл...";
 
     public static final String TOO_BIG_EXPENSES_WARNING = "❗Расходы, больше чем 999999999\nне были добавлены";
 

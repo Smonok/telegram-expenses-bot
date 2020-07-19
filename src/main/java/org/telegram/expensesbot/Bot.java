@@ -209,8 +209,9 @@ public class Bot extends TelegramLongPollingBot {
 
             sendTextMessageIfCallback(reportMessage, update);
         } else if (buttonData.equals(ExpensesReportData.FILE_FORMAT)) {
-            File document = createReportFile();
+            sendTextMessage(BotResponseConstants.CREATING_FILE);
 
+            File document = createReportFile();
             sendDocument(BotResponseConstants.REPORT_FILE, update, document);
         } else if (buttonData.equals("back")) {
             List<List<InlineKeyboardButton>> keyboard = expensesReportKeyboard.createTimeIntervalsKeyboard();
