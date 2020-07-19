@@ -18,7 +18,7 @@ public class CategoryButton {
     private String category;
 
     @Column
-    private int expenses;
+    private long expenses;
 
     public long getId() {
         return id;
@@ -44,11 +44,11 @@ public class CategoryButton {
         this.category = category;
     }
 
-    public int getExpenses() {
+    public long getExpenses() {
         return expenses;
     }
 
-    public void setExpenses(int expenses) {
+    public void setExpenses(long expenses) {
         this.expenses = expenses;
     }
 
@@ -75,7 +75,7 @@ public class CategoryButton {
     public CategoryButton() {
     }
 
-    public CategoryButton(long userId, String category, int expenses) {
+    public CategoryButton(long userId, String category, long expenses) {
         this.chatId = userId;
         this.category = category;
         this.expenses = expenses;

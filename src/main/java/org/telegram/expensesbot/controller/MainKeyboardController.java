@@ -6,7 +6,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
-
 import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
@@ -14,16 +13,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.telegram.expensesbot.util.ExpensesParserUtil;
+import org.telegram.expensesbot.constants.BotCommandConstants;
 import org.telegram.expensesbot.model.CategoryButton;
 import org.telegram.expensesbot.model.Subexpenses;
 import org.telegram.expensesbot.service.CategoryButtonService;
 import org.telegram.expensesbot.service.SubexpensesService;
+import org.telegram.expensesbot.util.ExpensesParserUtil;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 
 @Component
 public class MainKeyboardController {
-    private static final String CATEGORIES_CONTROL = "'Управление категориями'";
     private static final String SUMMARY = "Суммарно";
     private static final int HEADER_ROWS_NUMBER = 2;
     private static final Logger log = LoggerFactory.getLogger(MainKeyboardController.class);
@@ -130,8 +129,8 @@ public class MainKeyboardController {
 
     public List<KeyboardRow> changeButtonExpenses(String category, String expensesMessage) {
         CategoryButton categoryButton = buttonService.findByCategoryAndChatId(category, chatId);
-        int currentExpenses = categoryButton.getExpenses();
-        int resultExpenses = calculateResultExpenses(currentExpenses, expensesMessage);
+        long currentExpenses = categoryButton.getExpenses();
+        long resultExpenses = calculateResultExpenses(currentExpenses, expensesMessage);
         Subexpenses subexpenses = new Subexpenses();
 
         subexpenses.setChatId(chatId);
@@ -158,11 +157,14 @@ public class MainKeyboardController {
         });
     }
 
-    private int calculateResultExpenses(int currentExpenses, String expensesMessage) {
+    private long calculateResultExpenses(long currentExpenses, String expensesMessage) {
         String[] expensesLines = ExpensesParserUtil.splitByNewLine(expensesMessage);
 
         for (String line : expensesLines) {
-            currentExpenses += ExpensesParserUtil.parseExpenses(line);
+            int subexpenses = ExpensesParserUtil.parseExpenses(line);
+            if(subexpenses > 0) {
+                currentExpenses += subexpenses;
+            }
         }
 
         return currentExpenses;
@@ -186,8 +188,8 @@ public class MainKeyboardController {
     private void addFirstRow(List<KeyboardRow> keyboard) {
         KeyboardRow firstRow = new KeyboardRow();
 
-        firstRow.add(CATEGORIES_CONTROL);
-        firstRow.add("'Помощь'");
+        firstRow.add(BotCommandConstants.CATEGORIES_CONTROL_BUTTON);
+        firstRow.add(BotCommandConstants.HELP_BUTTON);
 
         if (keyboard.isEmpty()) {
             keyboard.add(firstRow);
@@ -216,7 +218,7 @@ public class MainKeyboardController {
 
         keyboardButtons.forEach(keyboardButton -> {
             String category = keyboardButton.getCategory();
-            int expenses = keyboardButton.getExpenses();
+            long expenses = keyboardButton.getExpenses();
             String buttonName = combineButtonName(category, expenses);
 
             keyboardController.addButton(buttonName);
@@ -246,9 +248,9 @@ public class MainKeyboardController {
     }
 
     public boolean isKeyboardButton(String buttonName) {
-        if (buttonName.equals("'Управление категориями'") ||
-            buttonName.equals("'Помощь'") ||
-            buttonName.equals("'Суммарно'")) {
+        if (buttonName.equals(BotCommandConstants.CATEGORIES_CONTROL_BUTTON) ||
+            buttonName.equals(BotCommandConstants.HELP_BUTTON) ||
+            isSummaryButton(buttonName)) {
             return true;
         }
 
@@ -272,7 +274,7 @@ public class MainKeyboardController {
         return buttonService.existsCategoryButtonByCategoryAndChatId(category, chatId);
     }
 
-    public String combineButtonName(String name, int expenses) {
+    public String combineButtonName(String name, long expenses) {
         return String.format("'%s - %d'", name, expenses);
     }
 

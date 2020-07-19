@@ -28,9 +28,9 @@ public class ExpensesReportKeyboard {
         List<InlineKeyboardButton> firstRow = new ArrayList<>();
         List<InlineKeyboardButton> secondRow = new ArrayList<>();
 
-        firstRow.add(addButton("Сообщение", ExpensesReportData.MESSAGE_FORMAT));
-        firstRow.add(addButton("Файл", ExpensesReportData.FILE_FORMAT));
-        secondRow.add(addButton("Назад", ExpensesReportData.BACK));
+        firstRow.add(addButton("Сообщение\uD83D\uDCAC", ExpensesReportData.MESSAGE_FORMAT));
+        firstRow.add(addButton("Файл\uD83D\uDCC4", ExpensesReportData.FILE_FORMAT));
+        secondRow.add(addButton("Назад◀️", ExpensesReportData.BACK));
 
         keyboard.add(firstRow);
         keyboard.add(secondRow);

@@ -17,9 +17,9 @@ public interface DefaultCategoryButtonService {
 
     Long deleteAllByChatId(long chatId);
 
-    int updateAllExpensesByChatId(int expenses, long chatId);
+    int updateAllExpensesByChatId(long expenses, long chatId);
 
-    int updateCategoryButtonExpenses(int expenses, String category, long chatId);
+    int updateCategoryButtonExpenses(long expenses, String category, long chatId);
 
     Long calculateSummaryExpenses(long chatId);
 }

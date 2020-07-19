@@ -1,6 +1,5 @@
 package org.telegram.expensesbot.service;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import javax.transaction.Transactional;
@@ -68,7 +67,7 @@ public class CategoryButtonService implements DefaultCategoryButtonService {
     }
 
     @Override
-    public int updateAllExpensesByChatId(int expenses, long chatId) {
+    public int updateAllExpensesByChatId(long expenses, long chatId) {
         if (expenses < 0 || chatId < 1) {
             return 0;
         }
@@ -77,7 +76,7 @@ public class CategoryButtonService implements DefaultCategoryButtonService {
     }
 
     @Override
-    public int updateCategoryButtonExpenses(int expenses, String category, long chatId) {
+    public int updateCategoryButtonExpenses(long expenses, String category, long chatId) {
         if (expenses < 0 || chatId < 1 || StringUtils.isBlank(category)) {
             return 0;
         }

@@ -23,11 +23,11 @@ public interface CategoryButtonRepository extends CrudRepository<CategoryButton,
 
     @Modifying
     @Query(CategoryButtonQueryConstants.UPDATE_EXPENSES_BY_CHAT_ID)
-    int updateAllExpensesByChatId(int expenses, long chatId);
+    int updateAllExpensesByChatId(long expenses, long chatId);
 
     @Modifying
     @Query(CategoryButtonQueryConstants.UPDATE_EXPENSES_BY_CHAT_ID_AND_CATEGORY)
-    int updateCategoryButtonExpenses(int expenses, String category, long chatId);
+    int updateCategoryButtonExpenses(long expenses, String category, long chatId);
 
     @Query(CategoryButtonQueryConstants.SELECT_EXPENSES_SUM_BY_CHAT_ID)
     Long calculateSummaryExpenses(long chatId);

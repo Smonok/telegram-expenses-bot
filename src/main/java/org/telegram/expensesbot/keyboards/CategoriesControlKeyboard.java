@@ -13,9 +13,9 @@ public class CategoriesControlKeyboard {
         List<InlineKeyboardButton> secondRow = new ArrayList<>();
         List<InlineKeyboardButton> thirdRow = new ArrayList<>();
 
-        firstRow.add(addButton("Новая категория", CategoriesControlData.NEW_CATEGORY));
-        secondRow.add(addButton("Удалить категорию", CategoriesControlData.DELETE_CATEGORY));
-        thirdRow.add(addButton("Обнулить счета", CategoriesControlData.RESET_BILLS));
+        firstRow.add(addButton("Новая категория\uD83D\uDCDD", CategoriesControlData.NEW_CATEGORY));
+        secondRow.add(addButton("Удалить категорию\uD83D\uDDD1", CategoriesControlData.DELETE_CATEGORY));
+        thirdRow.add(addButton("Обнулить счета\uD83D\uDCB8", CategoriesControlData.RESET_BILLS));
 
         keyboard.add(firstRow);
         keyboard.add(secondRow);

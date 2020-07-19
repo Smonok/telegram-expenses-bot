@@ -1,14 +1,16 @@
 package org.telegram.expensesbot;
 
 import java.io.File;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
-import java.util.*;
-import org.telegram.expensesbot.constants.BotCommands;
+import org.telegram.expensesbot.constants.BotCommandConstants;
+import org.telegram.expensesbot.constants.BotResponseConstants;
 import org.telegram.expensesbot.constants.callbackdata.CategoriesControlData;
 import org.telegram.expensesbot.constants.callbackdata.ExpensesReportData;
 import org.telegram.expensesbot.controller.FileReportController;
@@ -36,10 +38,11 @@ public class Bot extends TelegramLongPollingBot {
     private final CategoriesControlKeyboard categoriesControlKeyboard = new CategoriesControlKeyboard();
     private final Map<Long, String> chatIdPreviousMessage = new HashMap<>();
     private final Map<Long, String> chatIdTimeInterval = new HashMap<>();
+    private final Map<Long, String> chatIdCategory = new HashMap<>();
     private Message message;
     private Long chatId = 0L;
     String messageText = "";
-    private String category = " ";
+
 
     @Autowired
     private MainKeyboardController mainKeyboard;
@@ -60,6 +63,7 @@ public class Bot extends TelegramLongPollingBot {
                 initStart();
                 deleteButton();
                 handleCategoriesControlButton();
+                handleHelpButton();
                 addButtonIfNewCategoryPrevious();
                 handleCategoryButton();
                 handleExpensesLines();
@@ -77,15 +81,21 @@ public class Bot extends TelegramLongPollingBot {
     }
 
     private void initStart() {
-        if (messageText.equals(BotCommands.START_COMMAND)) {
-            sendReplyKeyboardMessage("Начинаем работать", mainKeyboard.removeUserExpenses());
+        if (messageText.equals(BotCommandConstants.START_COMMAND)) {
+            sendReplyKeyboardMessage(BotResponseConstants.START_WORK, mainKeyboard.removeUserExpenses());
         }
     }
 
     private void handleCategoriesControlButton() {
-        if (messageText.equals(BotCommands.CATEGORIES_CONTROL_BUTTON)) {
-            sendInlineKeyboardMessage("Выберите действие",
+        if (messageText.equals(BotCommandConstants.CATEGORIES_CONTROL_BUTTON)) {
+            sendInlineKeyboardMessage(BotResponseConstants.CHOOSE_ACTION,
                 categoriesControlKeyboard.getKeyboard());
+        }
+    }
+
+    private void handleHelpButton() {
+        if (messageText.equals(BotCommandConstants.HELP_BUTTON)) {
+            sendTextMessage(BotResponseConstants.HELP_INFO);
         }
     }
 
@@ -93,9 +103,9 @@ public class Bot extends TelegramLongPollingBot {
         if (chatIdPreviousMessage.get(chatId) != null &&
             chatIdPreviousMessage.get(chatId).equals(CategoriesControlData.NEW_CATEGORY)) {
             if (mainKeyboard.isSuitableForAdding(messageText)) {
-                sendReplyKeyboardMessage("Добавление успешно", mainKeyboard.addCategory(messageText));
+                sendReplyKeyboardMessage(BotResponseConstants.ADD_SUCCESSFUL, mainKeyboard.addCategory(messageText));
             } else {
-                sendTextMessage("Недопустимое имя категории");
+                sendTextMessage(BotResponseConstants.WRONG_CATEGORY_NAME_ERROR);
             }
         }
     }
@@ -104,59 +114,52 @@ public class Bot extends TelegramLongPollingBot {
         if (chatIdPreviousMessage.get(chatId) != null &&
             chatIdPreviousMessage.get(chatId).equals(CategoriesControlData.DELETE_CATEGORY) &&
             mainKeyboard.isCategoryButton(messageText)) {
-            sendReplyKeyboardMessage("Удаление успешно", mainKeyboard.deleteCategory(messageText));
+            sendReplyKeyboardMessage(BotResponseConstants.DELETE_SUCCESSFUL, mainKeyboard.deleteCategory(messageText));
         }
     }
 
     private void handleCategoryButton() {
         if (mainKeyboard.isCategoryButton(messageText)) {
-            category = ExpensesParserUtil.parseCategoryName(messageText);
-            String text = "Для добавления расходов\nпришлите строку или строки\nв формате: сумма - название.\n"
-                + "Или выберите период времени,\nдля получения отчёта";
-            sendInlineKeyboardMessage(text, expensesReportKeyboard.createTimeIntervalsKeyboard());
+            chatIdCategory.put(chatId, ExpensesParserUtil.parseCategoryName(messageText));
+            sendInlineKeyboardMessage(BotResponseConstants.ADD_EXPENSES_OR_GET_REPORT_INFO,
+                expensesReportKeyboard.createTimeIntervalsKeyboard());
         }
     }
 
     private void handleExpensesLines() {
         if (!StringUtils.isBlank(chatIdPreviousMessage.get(chatId)) &&
-            !chatIdPreviousMessage.get(chatId).equals(CategoriesControlData.NEW_CATEGORY) &&
-            !chatIdPreviousMessage.get(chatId).equals("Удалить категорию")) {
+            mainKeyboard.isCategoryButton(chatIdPreviousMessage.get(chatId))) {
             if (ExpensesParserUtil.isExpensesLines(messageText)) {
                 if (ExpensesParserUtil.isTooBigExpenses(messageText)) {
-                    sendTextMessage("Расходы больше, чем 999999999\nне были добавлены");
+                    sendTextMessage(BotResponseConstants.TOO_BIG_EXPENSES_WARNING);
                 }
-                sendReplyKeyboardMessage("Изменено", mainKeyboard.changeButtonExpenses(category, messageText));
-            } else {
+                sendReplyKeyboardMessage(BotResponseConstants.CHANGED,
+                    mainKeyboard.changeButtonExpenses(chatIdCategory.get(chatId), messageText));
+            } else if (!mainKeyboard.isKeyboardButton(messageText)) {
                 sendErrorExpensesLinesMessage();
             }
         }
     }
 
     private void sendErrorExpensesLinesMessage() {
-        if (!StringUtils.isBlank(chatIdPreviousMessage.get(chatId)) &&
-            !chatIdPreviousMessage.get(chatId).equals(CategoriesControlData.NEW_CATEGORY) &&
-            !chatIdPreviousMessage.get(chatId).equals(CategoriesControlData.DELETE_CATEGORY) &&
-            !mainKeyboard.isKeyboardButton(messageText)) {
-            String errorMessage = "";
-            if (ExpensesParserUtil.countSeparators(messageText) == 0) {
-                errorMessage = "Отсутствует разделитель: '-'";
-            } else if (ExpensesParserUtil.isExpensesNonNaturalNumber(messageText)) {
-                errorMessage = "Недопустимы значения расходов, меньше чем 1";
-            } else if (ExpensesParserUtil.countSeparators(messageText) > 1) {
-                errorMessage = "Недопустимо больше одного разделителя";
-            }
-
-            sendTextMessage("Неверный формат\n" + errorMessage);
+        String errorMessage = "";
+        if (ExpensesParserUtil.countSeparators(messageText) == 0) {
+            errorMessage = BotResponseConstants.NO_SEPARATOR_ERROR;
+        } else if (ExpensesParserUtil.isExpensesNonNaturalNumber(messageText)) {
+            errorMessage = BotResponseConstants.NEGATIVE_EXPENSES_ERROR;
+        } else if (ExpensesParserUtil.countSeparators(messageText) > 1) {
+            errorMessage = BotResponseConstants.TOO_MANY_SEPARATORS_ERROR;
         }
+
+        sendTextMessage(BotResponseConstants.WRONG_FORMAT_ERROR + errorMessage);
     }
 
     private void handleSummaryButton() {
         if (!StringUtils.isBlank(chatIdPreviousMessage.get(chatId)) &&
             !chatIdPreviousMessage.get(chatId).equals(CategoriesControlData.NEW_CATEGORY) &&
             mainKeyboard.isSummaryButton(messageText)) {
-            category = "Суммарно";
-            sendInlineKeyboardMessage("Выберите период времени, за который\n" +
-                    "вы хотите получить отчёт по всем категориям",
+            chatIdCategory.put(chatId, BotCommandConstants.SUMMARY_BUTTON);
+            sendInlineKeyboardMessage(BotResponseConstants.SUMMARY_TIME_PERIOD_INFO,
                 expensesReportKeyboard.createTimeIntervalsKeyboard());
         }
     }
@@ -166,16 +169,15 @@ public class Bot extends TelegramLongPollingBot {
 
         switch (buttonData) {
             case CategoriesControlData.NEW_CATEGORY:
-                sendTextMessageIfCallback("Пришлите имя категории", update);
+                sendTextMessageIfCallback(BotResponseConstants.SEND_CATEGORY_NAME, update);
                 chatIdPreviousMessage.put(chatId, buttonData);
                 break;
             case CategoriesControlData.DELETE_CATEGORY:
-                sendTextMessageIfCallback("Выберите категорию для удаления", update);
+                sendTextMessageIfCallback(BotResponseConstants.CHOOSE_CATEGORY_TO_DELETE, update);
                 chatIdPreviousMessage.put(chatId, buttonData);
                 break;
             case CategoriesControlData.RESET_BILLS:
-                sendKeyboardMessageIfCallback("Счета обнулены\nПоздравляем с новым периодом в жизни!",
-                    update, mainKeyboard.resetExpenses());
+                sendKeyboardMessageIfCallback(BotResponseConstants.BILLS_RESET, update, mainKeyboard.resetExpenses());
                 chatIdPreviousMessage.put(chatId, buttonData);
                 break;
         }
@@ -192,9 +194,8 @@ public class Bot extends TelegramLongPollingBot {
     }
 
     private void changeToReportFormatKeyboard(Update update) {
-        String text = "Выберете формат отчёта";
         List<List<InlineKeyboardButton>> keyboard = expensesReportKeyboard.createReportFormatKeyboard();
-        changeInlineKeyboardMessage(update, keyboard, text);
+        changeInlineKeyboardMessage(update, keyboard, BotResponseConstants.CHOOSE_REPORT_FORMAT);
     }
 
     private void handleReportFormatKeyboard(Update update) {
@@ -209,19 +210,21 @@ public class Bot extends TelegramLongPollingBot {
             sendTextMessageIfCallback(reportMessage, update);
         } else if (buttonData.equals(ExpensesReportData.FILE_FORMAT)) {
             File document = createReportFile();
-            String text = "Файл с отчётом";
 
-            sendDocument(text, update, document);
+            sendDocument(BotResponseConstants.REPORT_FILE, update, document);
         } else if (buttonData.equals("back")) {
-            String text = "Выберите период времени, за который\n" +
-                "вы хотите получить отчёт по всем категориям";
             List<List<InlineKeyboardButton>> keyboard = expensesReportKeyboard.createTimeIntervalsKeyboard();
 
-            changeInlineKeyboardMessage(update, keyboard, text);
+            if (chatIdCategory.get(chatId).equals(BotCommandConstants.SUMMARY_BUTTON)) {
+                changeInlineKeyboardMessage(update, keyboard, BotResponseConstants.SUMMARY_TIME_PERIOD_INFO);
+            } else {
+                changeInlineKeyboardMessage(update, keyboard, BotResponseConstants.ADD_EXPENSES_OR_GET_REPORT_INFO);
+            }
         }
     }
 
     private String createReportMessage() {
+        String category = chatIdCategory.get(chatId);
         switch (chatIdTimeInterval.get(chatId)) {
             case ExpensesReportData.ALL_TIME:
                 return messageReportController.createAllTimeReportMessage(category);
@@ -237,6 +240,7 @@ public class Bot extends TelegramLongPollingBot {
     }
 
     private File createReportFile() {
+        String category = chatIdCategory.get(chatId);
         switch (chatIdTimeInterval.get(chatId)) {
             case ExpensesReportData.ALL_TIME:
                 return fileReportController.createAllTimeFileReport(category);
