@@ -57,7 +57,11 @@ public class BotResponseConstants {
 
     public static final String CREATING_FILE = "Создаётся файл...";
 
-    public static final String TOO_BIG_EXPENSES_WARNING = "❗Расходы, больше чем 999999999\nне были добавлены";
+    public static final String YOUR_ID = "ID Вашего чата: ";
+
+    public static final String UNKNOWN_COMMAND = "Неизвесная команда\uD83D\uDE15";
+
+    public static final String TOO_BIG_EXPENSES_WARNING = "❗Расходы, больше чем 999999999\nне были добавлены\n";
 
     public static final String NO_SEPARATOR_ERROR = "Отсутствует разделитель: '-'";
 

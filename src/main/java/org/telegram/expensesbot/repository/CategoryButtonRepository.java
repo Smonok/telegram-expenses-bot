@@ -5,6 +5,8 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 import org.telegram.expensesbot.constants.sql.CategoryButtonQueryConstants;
 import org.telegram.expensesbot.model.CategoryButton;
 
@@ -21,11 +23,13 @@ public interface CategoryButtonRepository extends CrudRepository<CategoryButton,
 
     Long deleteAllByChatId(long chatId);
 
-    @Modifying
+    @Transactional
+    @Modifying(clearAutomatically = true)
     @Query(CategoryButtonQueryConstants.UPDATE_EXPENSES_BY_CHAT_ID)
     int updateAllExpensesByChatId(long expenses, long chatId);
 
-    @Modifying
+    @Transactional
+    @Modifying(clearAutomatically = true)
     @Query(CategoryButtonQueryConstants.UPDATE_EXPENSES_BY_CHAT_ID_AND_CATEGORY)
     int updateCategoryButtonExpenses(long expenses, String category, long chatId);
 

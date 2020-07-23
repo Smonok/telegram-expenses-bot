@@ -136,7 +136,9 @@ public class MainKeyboardController {
         subexpenses.setChatId(chatId);
         subexpenses.setCategory(category);
 
+        log.info("Update '{}' button with expenses = {} for chat: {}", category, resultExpenses, chatId);
         buttonService.updateCategoryButtonExpenses(resultExpenses, category, chatId);
+
         saveSubexpenses(category, expensesMessage);
 
         return fillEmptyKeyboard();
@@ -176,6 +178,7 @@ public class MainKeyboardController {
         initHeader(keyboard);
         fillKeyboardFromDB(keyboard);
 
+        log.info("Created keyboard: {} for chat: {}", keyboard, chatId);
         cache.put(chatId, keyboard);
         return keyboard;
     }
@@ -221,6 +224,7 @@ public class MainKeyboardController {
             long expenses = keyboardButton.getExpenses();
             String buttonName = combineButtonName(category, expenses);
 
+            log.info("Creating button with category: {}, expenses: {}, for chat: {}", category, expenses, chatId);
             keyboardController.addButton(buttonName);
         });
     }

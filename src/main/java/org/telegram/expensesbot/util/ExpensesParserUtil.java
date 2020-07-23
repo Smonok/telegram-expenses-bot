@@ -24,6 +24,18 @@ public class ExpensesParserUtil {
         return StringUtils.countMatches(message, "-");
     }
 
+    public static boolean isTooBigExpenses(String message) {
+        if (StringUtils.isBlank(message)) {
+            throw new IllegalArgumentException(BLANK_PARAMETER_ERROR);
+        }
+
+        String[] messageLines = splitByNewLine(message);
+        long count = Arrays.stream(messageLines)
+            .filter(line -> parseExpenses(line) < 0).count();
+
+        return count > 0;
+    }
+
     public static int parseExpenses(String message) {
         if (StringUtils.isBlank(message)) {
             throw new IllegalArgumentException(BLANK_PARAMETER_ERROR);
@@ -36,18 +48,6 @@ public class ExpensesParserUtil {
         }
 
         return Integer.parseInt(message.split("-")[0].trim());
-    }
-
-    public static boolean isTooBigExpenses(String message) {
-        if (StringUtils.isBlank(message)) {
-            throw new IllegalArgumentException(BLANK_PARAMETER_ERROR);
-        }
-
-        String[] messageLines = splitByNewLine(message);
-        long count = Arrays.stream(messageLines)
-            .filter(line -> parseExpenses(line) < 0).count();
-
-        return count > 0;
     }
 
     public static String parseReasons(String message) {

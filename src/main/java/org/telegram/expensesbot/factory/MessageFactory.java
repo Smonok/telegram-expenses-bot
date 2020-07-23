@@ -1,6 +1,8 @@
 package org.telegram.expensesbot.factory;
 
+import java.io.File;
 import java.util.List;
+import org.apache.commons.lang.StringUtils;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
@@ -15,20 +17,25 @@ public class MessageFactory {
     private static final ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
     private static final InlineKeyboardMarkup inlineKeyboardMarkup = new InlineKeyboardMarkup();
 
-    public static SendMessage initSendMessage(Message message) {
+    public static SendMessage initSendMessage(Message message, String text) {
         SendMessage sendMessage = new SendMessage();
 
         if (message != null) {
             sendMessage.setChatId(message.getChatId());
             sendMessage.setReplyToMessageId(message.getMessageId());
             sendMessage.enableHtml(true);
+            sendMessage.setText(text);
         }
         return sendMessage;
     }
 
-    public static SendMessage initReplyKeyboardSendMessage(Message message, List<KeyboardRow> keyboard) {
+    public static SendMessage initReplyKeyboardSendMessage(Message message, List<KeyboardRow> keyboard, String text) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.enableHtml(true);
+
+        if(!StringUtils.isBlank(text)) {
+            sendMessage.setText(text);
+        }
 
         if (message != null) {
             sendMessage.setChatId(message.getChatId());
@@ -49,7 +56,7 @@ public class MessageFactory {
     }
 
     public static SendMessage initInlineKeyboardSendMessage(Message message,
-        List<List<InlineKeyboardButton>> keyboard) {
+        List<List<InlineKeyboardButton>> keyboard, String text) {
         SendMessage sendMessage = new SendMessage();
         sendMessage.enableHtml(true);
         sendMessage.setChatId(message.getChatId());
@@ -57,6 +64,7 @@ public class MessageFactory {
 
         configureInlineKeyboardMarkup(keyboard);
         sendMessage.setReplyMarkup(inlineKeyboardMarkup);
+        sendMessage.setText(text);
 
         return sendMessage;
     }
@@ -65,28 +73,34 @@ public class MessageFactory {
         inlineKeyboardMarkup.setKeyboard(keyboard);
     }
 
-    public static SendMessage initCallbackSendMessage(Update update) {
-        return new SendMessage().setChatId(update.getCallbackQuery().getMessage().getChatId()).enableHtml(true);
+    public static SendMessage initCallbackSendMessage(Update update, String text) {
+        return new SendMessage().setChatId(update.getCallbackQuery().getMessage().getChatId())
+            .enableHtml(true)
+            .setText(text);
     }
 
-    public static SendMessage initCallbackReplyKeyboardSendMessage(Update update, List<KeyboardRow> keyboard) {
+    public static SendMessage initCallbackReplyKeyboardSendMessage(Update update,
+        List<KeyboardRow> keyboard, String text) {
         SendMessage sendMessage = new SendMessage().setChatId(update.getCallbackQuery().getMessage().getChatId());
         configureReplyKeyboardMarkup(keyboard);
         sendMessage.setReplyMarkup(replyKeyboardMarkup);
         sendMessage.enableHtml(true);
+        sendMessage.setText(text);
 
         return sendMessage;
     }
 
-    public static SendDocument initCallbackSendDocument(Update update, String caption) {
+    public static SendDocument initCallbackSendDocument(Update update, File document, String caption) {
         SendDocument sendDocumentRequest = new SendDocument();
         sendDocumentRequest.setChatId(update.getCallbackQuery().getMessage().getChatId());
         sendDocumentRequest.setCaption(caption);
+        sendDocumentRequest.setDocument(document);
 
         return sendDocumentRequest;
     }
 
-    public static EditMessageText initEditMessageText(Update update, List<List<InlineKeyboardButton>> keyboard) {
+    public static EditMessageText initEditMessageText(Update update,
+        List<List<InlineKeyboardButton>> keyboard, String text) {
         int messageId = update.getCallbackQuery().getMessage().getMessageId();
         long chatId = update.getCallbackQuery().getMessage().getChatId();
         String inlineMessageId = update.getCallbackQuery().getInlineMessageId();
@@ -95,6 +109,7 @@ public class MessageFactory {
             .setChatId(chatId)
             .setMessageId(messageId)
             .setInlineMessageId(inlineMessageId)
-            .setReplyMarkup(new InlineKeyboardMarkup(keyboard));
+            .setReplyMarkup(new InlineKeyboardMarkup(keyboard))
+            .setText(text);
     }
 }
