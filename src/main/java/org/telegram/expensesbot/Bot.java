@@ -20,16 +20,19 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 public class Bot extends TelegramWebhookBot {
     private static final Logger log = LoggerFactory.getLogger(Bot.class);
+    private final InputMessageHandler inputHandler;
     private String webHookPath;
     private String botUserName;
     private String botToken;
 
-    @Autowired
-    private InputMessageHandler inputHandler;
-
     @Override
     public BotApiMethod<?> onWebhookUpdateReceived(Update update) {
         return inputHandler.handleInput(update);
+    }
+
+    @Autowired
+    public Bot(InputMessageHandler inputHandler) {
+        this.inputHandler = inputHandler;
     }
 
     public void sendTextMessage(Message message, String text) {

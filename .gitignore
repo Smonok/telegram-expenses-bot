@@ -2,3 +2,6 @@
 /.settings/
 /target/
 /src/main/java/org/telegram/expensesbot/resources/reports/
+*.iml
+.project
+.classpath

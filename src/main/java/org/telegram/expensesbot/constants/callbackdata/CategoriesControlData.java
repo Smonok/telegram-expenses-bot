@@ -6,5 +6,5 @@ public class CategoriesControlData {
 
     public static final String DELETE_CATEGORY = "deleteCategory";
 
-    public static final String RESET_BILLS = "reset";
+    public static final String RESET_EXPENSES = "reset";
 }

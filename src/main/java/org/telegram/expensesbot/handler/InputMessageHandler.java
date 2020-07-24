@@ -31,6 +31,10 @@ public class InputMessageHandler {
     private static final Logger log = LoggerFactory.getLogger(InputMessageHandler.class);
     private final ExpensesReportKeyboard expensesReportKeyboard = new ExpensesReportKeyboard();
     private final CategoriesControlKeyboard categoriesControlKeyboard = new CategoriesControlKeyboard();
+    private final MainKeyboardController mainKeyboardController;
+    private final MessageReportController messageReportController;
+    private final FileReportController fileReportController;
+    private final Bot telegramBot;
     private final Map<Long, String> chatIdPreviousMessage = new HashMap<>();
     private final Map<Long, String> chatIdTimeInterval = new HashMap<>();
     private final Map<Long, String> chatIdCategory = new HashMap<>();
@@ -39,13 +43,14 @@ public class InputMessageHandler {
     private String messageText = "";
 
     @Autowired
-    private MainKeyboardController mainKeyboard;
-    @Autowired
-    private MessageReportController messageReportController;
-    @Autowired
-    private FileReportController fileReportController;
-    @Autowired
-    private Bot telegramBot;
+    public InputMessageHandler(MainKeyboardController mainKeyboardController,
+        MessageReportController messageReportController,
+        FileReportController fileReportController, Bot telegramBot) {
+        this.mainKeyboardController = mainKeyboardController;
+        this.messageReportController = messageReportController;
+        this.fileReportController = fileReportController;
+        this.telegramBot = telegramBot;
+    }
 
     public SendMessage handleInput(Update update) {
         if (update.hasMessage()) {
@@ -53,14 +58,14 @@ public class InputMessageHandler {
             if (message != null && message.hasText()) {
                 messageText = message.getText();
                 chatId = message.getChatId();
-                mainKeyboard.setChatId(chatId);
+                mainKeyboardController.setChatId(chatId);
                 initChatIdPreviousMessage();
 
                 return sendReplyToMessage();
             }
         } else if (update.hasCallbackQuery()) {
             chatId = update.getCallbackQuery().getMessage().getChatId();
-            mainKeyboard.setChatId(chatId);
+            mainKeyboardController.setChatId(chatId);
             messageReportController.setChatId(chatId);
             fileReportController.setChatId(chatId);
             initChatIdPreviousMessage();
@@ -78,63 +83,81 @@ public class InputMessageHandler {
     }
 
     private SendMessage sendReplyToMessage() {
+        SendMessage resultMessage = handleMessageText();
+        if (resultMessage != null) {
+            return resultMessage;
+        }
+
+        resultMessage = handleCategoryButtonsControl();
+
+        return resultMessage == null ?
+            MessageFactory.initSendMessage(message, BotResponseConstants.UNKNOWN_COMMAND) : resultMessage;
+    }
+
+    private SendMessage handleMessageText() {
         switch (messageText) {
             case BotCommandConstants.START_COMMAND:
-
+                log.info("/start in chat: {}", chatId);
                 chatIdPreviousMessage.put(chatId, messageText);
-                return MessageFactory.initReplyKeyboardSendMessage(message, mainKeyboard.removeUserExpenses(),
+                return MessageFactory.initReplyKeyboardSendMessage(message, mainKeyboardController.removeUserExpenses(),
                     BotResponseConstants.START_WORK);
             case BotCommandConstants.CATEGORIES_CONTROL_BUTTON:
-
+                log.info("Categories control button in chat: {}", chatId);
                 chatIdPreviousMessage.put(chatId, messageText);
                 return MessageFactory.initInlineKeyboardSendMessage(message,
                     categoriesControlKeyboard.getKeyboard(), BotResponseConstants.CHOOSE_ACTION);
             case BotCommandConstants.HELP_BUTTON:
-
+                log.info("Help control button in chat: {}", chatId);
                 chatIdPreviousMessage.put(chatId, messageText);
                 return MessageFactory.initSendMessage(message, BotResponseConstants.HELP_INFO);
             case BotCommandConstants.ID_COMMAND:
-
+                log.info("/id in chat: {}", chatId);
                 chatIdPreviousMessage.put(chatId, messageText);
                 return MessageFactory.initSendMessage(message, BotResponseConstants.YOUR_ID + chatId);
+            default:
+                return null;
         }
+    }
 
+    private SendMessage handleCategoryButtonsControl() {
         if (chatIdPreviousMessage.get(chatId).equals(CategoriesControlData.DELETE_CATEGORY) &&
-            mainKeyboard.isCategoryButton(messageText)) {
+            mainKeyboardController.isCategoryButton(messageText)) {
 
             return sendSuccessfulDeleteMessage();
         } else if (chatIdPreviousMessage.get(chatId).equals(CategoriesControlData.NEW_CATEGORY)) {
 
             return sendCategoryAddingMessage();
-        } else if (mainKeyboard.isCategoryButton(chatIdPreviousMessage.get(chatId)) &&
-            !mainKeyboard.isKeyboardButton(messageText)) {
+        } else if (mainKeyboardController.isCategoryButton(chatIdPreviousMessage.get(chatId)) &&
+            !mainKeyboardController.isKeyboardButton(messageText)) {
 
             return sendExpensesLinesAddingMessage();
-        } else if (mainKeyboard.isSummaryButton(messageText)) {
+        } else if (mainKeyboardController.isSummaryButton(messageText)) {
 
             return sendSummaryButtonMessage();
-        } else if (mainKeyboard.isCategoryButton(messageText)) {
+        } else if (mainKeyboardController.isCategoryButton(messageText)) {
 
             return sendCategoryButtonMessage();
         }
 
-        return MessageFactory.initSendMessage(message, BotResponseConstants.UNKNOWN_COMMAND);
+        return null;
     }
 
     private SendMessage sendSuccessfulDeleteMessage() {
         chatIdPreviousMessage.put(chatId, messageText);
+        log.info("Delete category: {}, from chat: {}", messageText, chatId);
         return MessageFactory.initReplyKeyboardSendMessage(message,
-            mainKeyboard.deleteCategory(messageText), BotResponseConstants.DELETE_SUCCESSFUL);
+            mainKeyboardController.deleteCategory(messageText), BotResponseConstants.DELETE_SUCCESSFUL);
     }
 
     private SendMessage sendCategoryAddingMessage() {
         chatIdPreviousMessage.put(chatId, messageText);
 
-        if (mainKeyboard.isSuitableForAdding(messageText)) {
+        if (mainKeyboardController.isSuitableForAdding(messageText)) {
+            log.info("Successfully added category: {} in chat: {}", messageText, chatId);
             return MessageFactory.initReplyKeyboardSendMessage(message,
-                mainKeyboard.addCategory(messageText), BotResponseConstants.ADD_SUCCESSFUL);
+                mainKeyboardController.addCategory(messageText), BotResponseConstants.ADD_SUCCESSFUL);
         }
-
+        log.info("Wrong category name: {} in chat: {}", messageText, chatId);
         return MessageFactory
             .initSendMessage(message, BotResponseConstants.WRONG_CATEGORY_NAME_ERROR);
     }
@@ -143,23 +166,25 @@ public class InputMessageHandler {
         chatIdPreviousMessage.put(chatId, messageText);
 
         if (!ExpensesParserUtil.isExpensesLines(messageText)) {
+            log.info("Wrong expenses lines format: {} in chat: {}", messageText, chatId);
             return combineErrorExpensesLinesMessage();
         }
 
         if (ExpensesParserUtil.isTooBigExpenses(messageText)) {
+            log.info("Too big expenses: {} in chat: {}", messageText, chatId);
             telegramBot.sendTextMessage(message,
                 BotResponseConstants.TOO_BIG_EXPENSES_WARNING);
         }
-
+        log.info("Add expenses: {}\nto category: {} in chat: {}", messageText, chatIdCategory.get(chatId), chatId);
         return MessageFactory.initReplyKeyboardSendMessage(message,
-            mainKeyboard.changeButtonExpenses(chatIdCategory.get(chatId), messageText),
+            mainKeyboardController.changeButtonExpenses(chatIdCategory.get(chatId), messageText),
             BotResponseConstants.CHANGED);
     }
 
     private SendMessage sendSummaryButtonMessage() {
         chatIdCategory.put(chatId, BotCommandConstants.SUMMARY_BUTTON);
         chatIdPreviousMessage.put(chatId, messageText);
-
+        log.info("Summary button in chat: {}", chatId);
         return MessageFactory.initInlineKeyboardSendMessage(message,
             expensesReportKeyboard.createTimeIntervalsKeyboard(),
             BotResponseConstants.SUMMARY_TIME_PERIOD_INFO);
@@ -168,75 +193,88 @@ public class InputMessageHandler {
     private SendMessage sendCategoryButtonMessage() {
         chatIdCategory.put(chatId, ExpensesParserUtil.parseCategoryName(messageText));
         chatIdPreviousMessage.put(chatId, messageText);
-
+        log.info("Category button: {} in chat: {}", messageText, chatId);
         return MessageFactory.initInlineKeyboardSendMessage(message,
             expensesReportKeyboard.createTimeIntervalsKeyboard(),
             BotResponseConstants.ADD_EXPENSES_OR_GET_REPORT_INFO);
     }
 
     private SendMessage sendReplyToCallback(Update update) {
-        String buttonData = update.getCallbackQuery().getData();
+        final String buttonData = update.getCallbackQuery().getData();
 
         switch (buttonData) {
             case CategoriesControlData.NEW_CATEGORY:
-                chatIdPreviousMessage.put(chatId, buttonData);
-                return MessageFactory.initCallbackSendMessage(update, BotResponseConstants.SEND_CATEGORY_NAME);
+                return sendCategoryNameRequestMessage(update);
             case CategoriesControlData.DELETE_CATEGORY:
-                chatIdPreviousMessage.put(chatId, buttonData);
-                return MessageFactory
-                    .initCallbackSendMessage(update, BotResponseConstants.CHOOSE_CATEGORY_TO_DELETE);
-            case CategoriesControlData.RESET_BILLS:
-                chatIdPreviousMessage.put(chatId, buttonData);
-                return MessageFactory.initCallbackReplyKeyboardSendMessage(update, mainKeyboard.resetExpenses(),
-                    BotResponseConstants.BILLS_RESET);
+                return sendChooseCategoryToDeleteMessage(update);
+            case CategoriesControlData.RESET_EXPENSES:
+                return sendExpensesResetMessage(update);
             case ExpensesReportData.MESSAGE_FORMAT:
-                if (!StringUtils.isBlank(chatIdTimeInterval.get(chatId))) {
-                    String reportMessage = createReportMessage();
-                    chatIdPreviousMessage.put(chatId, messageText);
-                    return MessageFactory.initCallbackSendMessage(update, reportMessage);
-                }
-                break;
+                return sendReportMessage(update);
             case ExpensesReportData.FILE_FORMAT:
-                File document = createReportFile();
-                chatIdPreviousMessage.put(chatId, messageText);
-                telegramBot.sendDocument(update, BotResponseConstants.REPORT_FILE, document);
+                sendReportFile(update);
                 break;
             case ExpensesReportData.BACK:
-                List<List<InlineKeyboardButton>> keyboard = expensesReportKeyboard.createTimeIntervalsKeyboard();
-                chatIdPreviousMessage.put(chatId, messageText);
-                if (chatIdCategory.get(chatId).equals(BotCommandConstants.SUMMARY_BUTTON)) {
-                    telegramBot
-                        .changeInlineKeyboardMessage(update, keyboard, BotResponseConstants.SUMMARY_TIME_PERIOD_INFO);
-                } else {
-                    telegramBot.changeInlineKeyboardMessage(update, keyboard,
-                        BotResponseConstants.ADD_EXPENSES_OR_GET_REPORT_INFO);
-                }
+                changeToTimeIntervalsKeyboard(update);
                 break;
             case ExpensesReportData.ALL_TIME:
-                chatIdTimeInterval.put(chatId, buttonData);
-                chatIdPreviousMessage.put(chatId, messageText);
-                changeToReportFormatKeyboard(update);
-                break;
             case ExpensesReportData.SIX_MONTHS:
-                chatIdTimeInterval.put(chatId, buttonData);
-                chatIdPreviousMessage.put(chatId, messageText);
-                changeToReportFormatKeyboard(update);
-                break;
             case ExpensesReportData.THIRTY_DAYS:
-                chatIdTimeInterval.put(chatId, buttonData);
-                chatIdPreviousMessage.put(chatId, messageText);
-                changeToReportFormatKeyboard(update);
-                break;
             case ExpensesReportData.SEVEN_DAYS:
-                chatIdTimeInterval.put(chatId, buttonData);
-                chatIdPreviousMessage.put(chatId, messageText);
                 changeToReportFormatKeyboard(update);
                 break;
             default:
                 return new SendMessage();
         }
 
-        return new SendMessage();
+        return null;
+    }
+
+    private SendMessage sendCategoryNameRequestMessage(Update update) {
+        chatIdPreviousMessage.put(chatId, update.getCallbackQuery().getData());
+        return MessageFactory.initCallbackSendMessage(update, BotResponseConstants.SEND_CATEGORY_NAME);
+    }
+
+    private SendMessage sendChooseCategoryToDeleteMessage(Update update) {
+        chatIdPreviousMessage.put(chatId, update.getCallbackQuery().getData());
+        return MessageFactory
+            .initCallbackSendMessage(update, BotResponseConstants.CHOOSE_CATEGORY_TO_DELETE);
+    }
+
+    private SendMessage sendExpensesResetMessage(Update update) {
+        chatIdPreviousMessage.put(chatId, update.getCallbackQuery().getData());
+        return MessageFactory.initCallbackReplyKeyboardSendMessage(update, mainKeyboardController.resetExpenses(),
+            BotResponseConstants.EXPENSES_RESET);
+    }
+
+    private SendMessage sendReportMessage(Update update) {
+        if (StringUtils.isBlank(chatIdTimeInterval.get(chatId))) {
+            return MessageFactory.initSendMessage(message, BotResponseConstants.CHOOSE_TIME_INTERVAL);
+        }
+
+        String reportMessage = createReportMessage();
+        chatIdPreviousMessage.put(chatId, messageText);
+        return MessageFactory.initCallbackSendMessage(update, reportMessage);
+    }
+
+    private void sendReportFile(Update update) {
+        File document = createReportFile();
+
+        chatIdPreviousMessage.put(chatId, messageText);
+        telegramBot.sendTextMessage(message, BotResponseConstants.CREATING_FILE);
+        telegramBot.sendDocument(update, BotResponseConstants.REPORT_FILE, document);
+    }
+
+    private void changeToTimeIntervalsKeyboard(Update update) {
+        List<List<InlineKeyboardButton>> keyboard = expensesReportKeyboard.createTimeIntervalsKeyboard();
+        chatIdPreviousMessage.put(chatId, messageText);
+        if (chatIdCategory.get(chatId).equals(BotCommandConstants.SUMMARY_BUTTON)) {
+            telegramBot
+                .changeInlineKeyboardMessage(update, keyboard, BotResponseConstants.SUMMARY_TIME_PERIOD_INFO);
+        } else {
+            telegramBot.changeInlineKeyboardMessage(update, keyboard,
+                BotResponseConstants.ADD_EXPENSES_OR_GET_REPORT_INFO);
+        }
     }
 
     private String createReportMessage() {
@@ -251,7 +289,7 @@ public class InputMessageHandler {
             case ExpensesReportData.SEVEN_DAYS:
                 return messageReportController.createSevenDaysReportMessage(category);
             default:
-                return "error";
+                return "";
         }
     }
 
@@ -288,6 +326,10 @@ public class InputMessageHandler {
 
     private void changeToReportFormatKeyboard(Update update) {
         List<List<InlineKeyboardButton>> keyboard = expensesReportKeyboard.createReportFormatKeyboard();
+
+        chatIdTimeInterval.put(chatId, update.getCallbackQuery().getData());
+        chatIdPreviousMessage.put(chatId, messageText);
+
         log.info("Change to report format keyboard in chat: {}", chatId);
         telegramBot.changeInlineKeyboardMessage(update, keyboard, BotResponseConstants.CHOOSE_REPORT_FORMAT);
     }

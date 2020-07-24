@@ -15,7 +15,7 @@ public class CategoriesControlKeyboard {
 
         firstRow.add(addButton("Новая категория\uD83D\uDCDD", CategoriesControlData.NEW_CATEGORY));
         secondRow.add(addButton("Удалить категорию\uD83D\uDDD1", CategoriesControlData.DELETE_CATEGORY));
-        thirdRow.add(addButton("Обнулить счета\uD83D\uDCB8", CategoriesControlData.RESET_BILLS));
+        thirdRow.add(addButton("Обнулить счета\uD83D\uDCB8", CategoriesControlData.RESET_EXPENSES));
 
         keyboard.add(firstRow);
         keyboard.add(secondRow);

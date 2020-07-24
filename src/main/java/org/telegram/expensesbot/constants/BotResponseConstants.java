@@ -45,7 +45,7 @@ public class BotResponseConstants {
 
     public static final String CHANGED = "✅Изменено";
 
-    public static final String BILLS_RESET = "Счета обнулены\nПоздравляем с новым периодом в жизни!\uD83C\uDF89";
+    public static final String EXPENSES_RESET = "Счета обнулены\nПоздравляем с новым периодом в жизни!\uD83C\uDF89";
 
     public static final String ADD_EXPENSES_OR_GET_REPORT_INFO = "Для добавления расходов\nпришлите строку или строки\n"
         + "в формате:\n сумма - название.\n"
@@ -60,6 +60,8 @@ public class BotResponseConstants {
     public static final String YOUR_ID = "ID Вашего чата: ";
 
     public static final String UNKNOWN_COMMAND = "Неизвесная команда\uD83D\uDE15";
+
+    public static final String CHOOSE_TIME_INTERVAL = "❕Выберите период времени";
 
     public static final String TOO_BIG_EXPENSES_WARNING = "❗Расходы, больше чем 999999999\nне были добавлены\n";
 
