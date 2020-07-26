@@ -25,6 +25,16 @@
     <spring.version>5.0.8.RELEASE</spring.version>
   </properties>
 
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>com.heroku.sdk</groupId>
+        <artifactId>heroku-maven-plugin</artifactId>
+        <version>3.0.3</version>
+      </plugin>
+    </plugins>
+  </build>
+
   <dependencies>
     <dependency>
       <groupId>org.springframework.boot</groupId>
