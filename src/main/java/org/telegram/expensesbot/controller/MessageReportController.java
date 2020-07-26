@@ -18,15 +18,18 @@ import org.telegram.expensesbot.util.DateUtil;
 
 @Component
 public class MessageReportController implements DefaultMessageReportController {
+    private static final Logger log = LoggerFactory.getLogger(MessageReportController.class);
     private static final String BOLD_NAME_NUMBER_HEADER = "\n<b>===[ %s - %d ]===</b>";
     private static final String BOLD_GENERAL_SUM = "\n<b>===[ Общая сумма - %d ]===</b>";
-    private static final Logger log = LoggerFactory.getLogger(MessageReportController.class);
+    private final SubexpensesService subexpensesService;
     private StringJoiner report;
     private String category;
     private long chatId = 0;
 
     @Autowired
-    private SubexpensesService subexpensesService;
+    public MessageReportController(SubexpensesService subexpensesService) {
+        this.subexpensesService = subexpensesService;
+    }
 
     @Override
     public String createAllTimeReportMessage(String category) {

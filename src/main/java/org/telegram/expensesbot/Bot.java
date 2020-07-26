@@ -7,7 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.telegram.expensesbot.factory.MessageFactory;
-import org.telegram.expensesbot.handler.InputMessageHandler;
+import org.telegram.expensesbot.handler.InputHandler;
 import org.telegram.telegrambots.bots.TelegramWebhookBot;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
@@ -20,7 +20,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 public class Bot extends TelegramWebhookBot {
     private static final Logger log = LoggerFactory.getLogger(Bot.class);
-    private final InputMessageHandler inputHandler;
+    private final InputHandler inputHandler;
     private String webHookPath;
     private String botUserName;
     private String botToken;
@@ -31,12 +31,12 @@ public class Bot extends TelegramWebhookBot {
     }
 
     @Autowired
-    public Bot(InputMessageHandler inputHandler) {
+    public Bot(InputHandler inputHandler) {
         this.inputHandler = inputHandler;
     }
 
     public void sendTextMessage(Message message, String text) {
-        if (!StringUtils.isBlank(text) && message != null ) {
+        if (!StringUtils.isBlank(text) && message != null) {
             SendMessage sendMessage = MessageFactory.initSendMessage(message, text);
 
             try {

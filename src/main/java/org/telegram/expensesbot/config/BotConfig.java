@@ -5,7 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.stereotype.Component;
 import org.telegram.expensesbot.Bot;
-import org.telegram.expensesbot.handler.InputMessageHandler;
+import org.telegram.expensesbot.handler.InputHandler;
 
 @Component
 @Configuration
@@ -16,7 +16,7 @@ public class BotConfig {
     private String botToken;
 
     @Bean
-    public Bot configBot(InputMessageHandler handler) {
+    public Bot configBot(InputHandler handler) {
         Bot bot = new Bot(handler);
         bot.setBotUserName(botUserName);
         bot.setBotToken(botToken);

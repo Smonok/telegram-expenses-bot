@@ -26,14 +26,17 @@ public class MainKeyboardController {
     private static final String SUMMARY = "Суммарно";
     private static final int HEADER_ROWS_NUMBER = 2;
     private static final Logger log = LoggerFactory.getLogger(MainKeyboardController.class);
-    private long chatId = 0;
+    private final CategoryButtonService buttonService;
+    private final SubexpensesService subexpensesService;
     private final Map<Long, List<KeyboardRow>> cache = new HashMap<>();
+    private long chatId = 0;
 
     @Autowired
-    private CategoryButtonService buttonService;
-
-    @Autowired
-    private SubexpensesService subexpensesService;
+    public MainKeyboardController(CategoryButtonService buttonService,
+        SubexpensesService subexpensesService) {
+        this.buttonService = buttonService;
+        this.subexpensesService = subexpensesService;
+    }
 
     public List<KeyboardRow> addCategory(String name) {
         final int beginExpenses = 0;
@@ -236,11 +239,12 @@ public class MainKeyboardController {
         categoryName = categoryName.trim();
 
         if (categoryName.charAt(0) == '\'' || categoryName.equals("Управление категориями") ||
-            categoryName.equals("Помощь") || categoryName.equals("Суммарно")) {
+            categoryName.equals("Помощь") || categoryName.equals(SUMMARY)) {
             return false;
         }
 
-        return !isKeyboardButton(categoryName) && !isCategoryButton(categoryName) && !isSummaryButton(categoryName);
+        return !isKeyboardButton(categoryName) && !isCategoryExists(categoryName)
+            && !isCategoryButton(categoryName) && !isSummaryButton(categoryName);
     }
 
     public boolean isSummaryButton(String message) {

@@ -25,11 +25,12 @@ import org.telegram.expensesbot.util.DateUtil;
 
 @Component
 public class FileReportController implements DefaultFileReportController {
-    private static final String REPORTS_PATH = "src\\main\\java\\org\\telegram\\expensesbot\\resources\\reports";
+    private static final String REPORTS_PATH = "src\\main\\resources\\reports";
     private static final String NAME_NUMBER_HEADER = "===[ %s - %d ]===";
     private static final String GENERAL_SUM = "===[ Общая сумма - %d ]===";
     private static final String BLANK_CATEGORY_MESSAGE = "Category parameter is blank";
     private static final Logger log = LoggerFactory.getLogger(FileReportController.class);
+    private final SubexpensesService subexpensesService;
     private XSSFSheet sheet;
     private String sheetName;
     private String category;
@@ -37,7 +38,9 @@ public class FileReportController implements DefaultFileReportController {
     private long chatId = 0;
 
     @Autowired
-    private SubexpensesService subexpensesService;
+    public FileReportController(SubexpensesService subexpensesService) {
+        this.subexpensesService = subexpensesService;
+    }
 
     public File createAllTimeFileReport(String category) {
         if (StringUtils.isBlank(category)) {
