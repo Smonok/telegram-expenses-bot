@@ -1,1 +1,1 @@
-web: java -cp target/classes;target/dependency/* org.telegram.expensesbot.TelegramBotApplication
+web: java -Dserver.port=$PORT -jar target/expensesbot-0.0.1-SNAPSHOT.jar
