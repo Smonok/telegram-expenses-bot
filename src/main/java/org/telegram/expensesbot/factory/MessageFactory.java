@@ -109,7 +109,7 @@ public class MessageFactory {
             .setChatId(chatId)
             .setMessageId(messageId)
             .setInlineMessageId(inlineMessageId)
-            .setReplyMarkup(new InlineKeyboardMarkup(keyboard))
+            .setReplyMarkup(new InlineKeyboardMarkup().setKeyboard(keyboard))
             .setText(text);
     }
 }

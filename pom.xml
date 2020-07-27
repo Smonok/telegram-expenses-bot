@@ -23,34 +23,8 @@
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
     <spring.version>5.0.8.RELEASE</spring.version>
+    <full-artifact-name>target/${project.artifactId}-${project.version}.jar</full-artifact-name>
   </properties>
-
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>com.heroku.sdk</groupId>
-        <artifactId>heroku-maven-plugin</artifactId>
-        <configuration>
-          <jdkVersion>11</jdkVersion>
-        </configuration>
-      </plugin>
-
-      <plugin>
-        <!-- Build an executable JAR -->
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <configuration>
-          <archive>
-            <manifest>
-              <addClasspath>true</addClasspath>
-              <classpathPrefix>lib/</classpathPrefix>
-              <mainClass>org.telegram.expensesbot.TelegramBotApplication</mainClass>
-            </manifest>
-          </archive>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
 
   <dependencies>
     <dependency>
@@ -66,12 +40,6 @@
     <dependency>
       <groupId>org.hibernate.validator</groupId>
       <artifactId>hibernate-validator</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>org.telegram</groupId>
-      <artifactId>telegrambots-spring-boot-starter</artifactId>
-      <version>4.1.2</version>
     </dependency>
 
     <dependency>
@@ -97,13 +65,8 @@
     <!-- Telegram API -->
     <dependency>
       <groupId>org.telegram</groupId>
-      <artifactId>telegrambots</artifactId>
-      <version>LATEST</version>
-    </dependency>
-    <dependency>
-      <groupId>org.telegram</groupId>
-      <artifactId>telegrambotsextensions</artifactId>
-      <version>LATEST</version>
+      <artifactId>telegrambots-spring-boot-starter</artifactId>
+      <version>4.4.0.2</version>
     </dependency>
 
     <!-- JUnit -->
@@ -169,4 +132,23 @@
     </dependency>
 
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>3.0.1</version>
+        <executions>
+          <execution>
+            <id>copy-dependencies</id>
+            <phase>package</phase>
+            <goals>
+              <goal>copy-dependencies</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
 </project>
