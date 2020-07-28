@@ -1,6 +1,7 @@
 package org.telegram.expensesbot.repository;
 
 import java.util.List;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
@@ -17,6 +18,10 @@ public interface SubexpensesRepository extends CrudRepository<Subexpenses, Long>
     List<Subexpenses> findAllByChatIdOrderByCategory(long chatId);
 
     List<Subexpenses> findAllByChatIdAndCategory(long chatId, String category);
+
+    @Modifying
+    @Query(value = SubexpensesQueryConstants.SET_DATE_STYLE, nativeQuery = true)
+    void setDateStyle();
 
     @Query(value = SubexpensesQueryConstants.FIND_AFTER_SUBTRACTION, nativeQuery = true)
     List<Subexpenses> findAllAfterSubtraction(long chatId, String subtrahend);

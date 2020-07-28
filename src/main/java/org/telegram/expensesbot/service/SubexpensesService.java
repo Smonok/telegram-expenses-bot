@@ -66,6 +66,7 @@ public class SubexpensesService implements DefaultSubexpensesService {
             return Collections.emptyList();
         }
 
+        subexpensesRepository.setDateStyle();
         return subexpensesRepository.findAllAfterSubtraction(chatId, subtrahend);
     }
 
@@ -75,6 +76,7 @@ public class SubexpensesService implements DefaultSubexpensesService {
             return 0L;
         }
 
+        subexpensesRepository.setDateStyle();
         Long sum = subexpensesRepository.findSumAfterSubtraction(chatId, subtrahend);
         return sum == null ? 0L : sum;
     }
@@ -85,6 +87,7 @@ public class SubexpensesService implements DefaultSubexpensesService {
             return Collections.emptyList();
         }
 
+        subexpensesRepository.setDateStyle();
         return subexpensesRepository.findAllAfterSubtraction(chatId, category, subtrahend);
     }
 
@@ -93,6 +96,8 @@ public class SubexpensesService implements DefaultSubexpensesService {
         if (chatId < 1 || StringUtils.isBlank(category) || StringUtils.isBlank(subtrahend)) {
             return 0L;
         }
+
+        subexpensesRepository.setDateStyle();
         Long sum = subexpensesRepository.findSumAfterSubtraction(chatId, category, subtrahend);
         return sum == null ? 0L : sum;
     }
@@ -104,6 +109,7 @@ public class SubexpensesService implements DefaultSubexpensesService {
             return Collections.emptyList();
         }
 
+        subexpensesRepository.setDateStyle();
         return subexpensesRepository.findAllAfterSubtractionByMonthYear(chatId, category, subtrahend, month, year);
     }
 
@@ -114,6 +120,7 @@ public class SubexpensesService implements DefaultSubexpensesService {
             return 0L;
         }
 
+        subexpensesRepository.setDateStyle();
         return subexpensesRepository.findSumAfterSubtractionByMonthYear(chatId, category, subtrahend, month, year);
     }
 }
