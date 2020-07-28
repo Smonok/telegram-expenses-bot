@@ -1,8 +1,10 @@
 package org.telegram.expensesbot.controller;
 
+import com.google.common.io.Files;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -25,7 +27,6 @@ import org.telegram.expensesbot.util.DateUtil;
 
 @Component
 public class FileReportController implements DefaultFileReportController {
-    private static final String REPORTS_PATH = "src\\main\\resources\\reports";
     private static final String NAME_NUMBER_HEADER = "===[ %s - %d ]===";
     private static final String GENERAL_SUM = "===[ Общая сумма - %d ]===";
     private static final String BLANK_CATEGORY_MESSAGE = "Category parameter is blank";
@@ -46,79 +47,59 @@ public class FileReportController implements DefaultFileReportController {
         if (StringUtils.isBlank(category)) {
             throw new IllegalArgumentException(BLANK_CATEGORY_MESSAGE);
         }
-        File reportFile = createReportFileWithDirectory("all_time_report.xlsx");
 
         this.sheetName = "всё время";
-        createReportByCategory(SQLConstants.ALL_TIME_DATE_SUBTRAHEND, category, reportFile);
-        return reportFile;
+        return createReportByCategory(SQLConstants.ALL_TIME_DATE_SUBTRAHEND, category, "all_time_report.xlsx");
     }
 
     public File createSixMonthsFileReport(String category) {
         if (StringUtils.isBlank(category)) {
             throw new IllegalArgumentException(BLANK_CATEGORY_MESSAGE);
         }
-        File reportFile = createReportFileWithDirectory("six_month_report.xlsx");
 
         this.sheetName = "6 месяцев";
-        createReportByCategory(SQLConstants.SIX_MONTHS_DATE_SUBTRAHEND, category, reportFile);
-        return reportFile;
+        return createReportByCategory(SQLConstants.SIX_MONTHS_DATE_SUBTRAHEND, category, "six_month_report.xlsx");
     }
 
     public File createThirtyDaysFileReport(String category) {
         if (StringUtils.isBlank(category)) {
             throw new IllegalArgumentException(BLANK_CATEGORY_MESSAGE);
         }
-        File reportFile = createReportFileWithDirectory("thirty_days_report.xlsx");
 
         this.sheetName = "30 дней";
-        createReportByCategory(SQLConstants.THIRTY_DAYS_DATE_SUBTRAHEND, category, reportFile);
-        return reportFile;
+        return createReportByCategory(SQLConstants.THIRTY_DAYS_DATE_SUBTRAHEND, category, "thirty_days_report.xlsx");
     }
 
     public File createSevenDaysFileReport(String category) {
         if (StringUtils.isBlank(category)) {
             throw new IllegalArgumentException(BLANK_CATEGORY_MESSAGE);
         }
-        File reportFile = createReportFileWithDirectory("seven_days_report.xlsx");
 
         this.sheetName = "7 дней";
-        createReportByCategory(SQLConstants.SEVEN_DAYS_DATE_SUBTRAHEND, category, reportFile);
-        return reportFile;
+        return createReportByCategory(SQLConstants.SEVEN_DAYS_DATE_SUBTRAHEND, category, "seven_days_report.xlsx");
     }
 
-    private File createReportFileWithDirectory(String fileName) {
-        String directoryPath = String.format("%s\\%d", REPORTS_PATH, chatId);
-        String filePath = String.format("%s\\%s", directoryPath, fileName);
-        createDirectory(directoryPath);
-
-        return new File(filePath);
-    }
-
-    private void createDirectory(String directoryPath) {
-        File directory = new File(directoryPath);
-
-        if (!directory.exists() && directory.mkdirs()) {
-            log.info("Successfully created new directory : {}", directoryPath);
-        }
-    }
-
-    private void createReportByCategory(String subtrahend, String category, File reportFile) {
+    private File createReportByCategory(String subtrahend, String category, String fileName) {
         List<Date> monthYearBuffer = new ArrayList<>();
         this.category = category.equals("Суммарно") ? SQLConstants.ANY_STRING_SQL_REGEX : category;
         rowsCounter = 0;
 
+        File file = new File(Files.createTempDir(), fileName);
+
         try (XSSFWorkbook workbook = new XSSFWorkbook();
-            FileOutputStream output = new FileOutputStream(reportFile)) {
+            OutputStream outputStream = new FileOutputStream(file)) {
+
             sheet = initSheet(workbook);
             writeReportTimeHeader();
             writeGeneralSumHeader(subtrahend);
             writeSubexpenses(subtrahend, monthYearBuffer);
             writeMonthsExpenses(subtrahend, monthYearBuffer);
 
-            workbook.write(output);
+            workbook.write(outputStream);
         } catch (IOException e) {
-            log.error("Cannot create file: {}", reportFile.getPath());
+            log.error("Cannot create report file", e);
         }
+        return  file;
     }
 
     private XSSFSheet initSheet(XSSFWorkbook workbook) {
