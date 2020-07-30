@@ -110,6 +110,7 @@ public class MessageFactory {
             .setMessageId(messageId)
             .setInlineMessageId(inlineMessageId)
             .setReplyMarkup(new InlineKeyboardMarkup().setKeyboard(keyboard))
-            .setText(text);
+            .setText(text)
+            .enableHtml(true);
     }
 }

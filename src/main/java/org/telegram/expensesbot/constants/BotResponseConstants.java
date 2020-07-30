@@ -47,7 +47,7 @@ public class BotResponseConstants {
     public static final String EXPENSES_RESET = "Счета обнулены\nПоздравляем с новым периодом в жизни!\uD83C\uDF89";
 
     public static final String ADD_EXPENSES_OR_GET_REPORT_INFO = "Для добавления расходов\nпришлите строку или строки\n"
-        + "в формате:\n  <i>сумма - название</i>.\n"
+        + "в формате:\n  <i>сумма - название</i>\n  <i>сумма - название</i>\n"
         + "Или выберите период времени,\nдля получения отчёта";
 
     public static final String REPORT_FILE = "Файл с отчётом";
